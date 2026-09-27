@@ -19,6 +19,7 @@ const leafSchema = z
     );
   });
 
+/** A plain object (not null, not an array), so its keys can be checked safely. */
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /**
@@ -28,19 +29,21 @@ const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
  * schema. A plain z.union would report a bad node as a bare "Invalid input" with no path; this
  * way the error names the branch that was meant, e.g. `factors.3.condition.all.1.operator`.
  */
-export const conditionSchema: z.ZodType<Condition> = z.custom<Condition>().superRefine((node, ctx) => {
+const conditionSchema: z.ZodType<Condition> = z.custom<Condition>().superRefine((node, ctx) => {
   const kind = isRecord(node) ? groupKinds.find((g) => Object.hasOwn(node, g.key)) : undefined;
   (kind?.schema ?? leafSchema).safeParse(node).error?.issues.forEach((i) =>
     ctx.addIssue({ code: 'custom', path: i.path, message: i.message }),
   );
 });
 
+/** The group node kinds, keyed by their JSON key. Strict, so a group can't also carry leaf keys. */
 const groupKinds: ReadonlyArray<{ key: string; schema: z.ZodType }> = [
   { key: 'all', schema: z.strictObject({ all: z.array(conditionSchema).min(1) }) },
   { key: 'any', schema: z.strictObject({ any: z.array(conditionSchema).min(1) }) },
   { key: 'not', schema: z.strictObject({ not: conditionSchema }) },
 ];
 
+/** One risk band. Ordering and contiguity across bands are checked by the loader, which sees them all. */
 const bandSchema = z.object({
   min: z.number().min(0),
   max: z.number(),
@@ -49,6 +52,7 @@ const bandSchema = z.object({
   summary: z.string().min(1),
 });
 
+/** One factor. `descriptions` keys must be supported currencies; perOccurrence is only allowed on a leaf. */
 const factorSchema = z
   .object({
     id: z.string().regex(/^[a-z][a-z0-9_]*$/, 'id must be snake_case'),
@@ -64,6 +68,10 @@ const factorSchema = z
     message: 'perOccurrence is only allowed on a single-field (leaf) condition',
   });
 
+/**
+ * The whole KB. Unknown top-level keys are stripped rather than rejected, so an additive change from a newer
+ * KB is harmless. `satisfies` keeps this schema and the Kb interface in step: a mismatch is a type error.
+ */
 export const kbSchema = z.object({
   version: z.string().min(1),
   schemaVersion: z.number().int(),

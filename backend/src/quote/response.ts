@@ -3,11 +3,12 @@ import type { Currency } from './market';
 
 export type { AppliedFactor };
 
+/** How the premium was built, so the UI can show the formula's inputs next to the result. */
 export interface CoverageDetails {
-  readonly basePremium: number;
-  readonly riskMultiplier: number;
-  readonly coverageLoadFactor: number;
-  readonly sumInsured: number;
+  readonly basePremium: number;        // from the KB
+  readonly riskMultiplier: number;     // from the matched band
+  readonly coverageLoadFactor: number; // from the KB
+  readonly sumInsured: number;         // the request's propertyValue
   readonly items: ReadonlyArray<{ readonly id: string; readonly description: string }>;
 }
 

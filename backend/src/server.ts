@@ -9,6 +9,7 @@ import { reportReload } from './kb/refresh';
 // No routing, no validation, no framework, so local runs and "Lambda" share one code path.
 
 const port = Number(process.env['PORT'] ?? 3000);
+/** How often the watcher stats the KB file: fast enough that an edit is live before the next quote in a demo. */
 const KB_POLL_MS = 500;
 
 // Fail fast: a bad KB stops the server at startup with the loader's named error.

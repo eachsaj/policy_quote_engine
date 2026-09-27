@@ -10,6 +10,7 @@ import type { Condition, Factor, Kb, LoadedKb, OrderedBand } from './types';
 /** KB shapes this code understands. A breaking KB shape bumps `schemaVersion` and is rejected until code supports it. */
 export const supportedSchemaVersions: readonly number[] = [1];
 
+/** A KB that failed to load. `problems` lists every issue found, each starting with its JSON path. */
 export class KbValidationError extends Error {
   constructor(source: string, readonly problems: readonly string[]) {
     super(`Invalid KB at ${source}:\n  - ${problems.join('\n  - ')}`);
@@ -20,6 +21,7 @@ export class KbValidationError extends Error {
 /** `KB_PATH` wins; otherwise the repo-root KB, one level above the backend package. */
 export const kbPath = (): string => resolve(process.env.KB_PATH ?? resolve(process.cwd(), '..', 'risk-kb.json'));
 
+// A KB condition may only read fields the request schema declares.
 const requestShape = quoteRequestSchema.shape;
 const isRequestField = (field: string): field is keyof typeof requestShape => Object.hasOwn(requestShape, field);
 
@@ -34,11 +36,16 @@ const leavesOf = (c: Condition, at: string): Array<{ field: string; at: string }
 const orderBands = (bands: Kb['riskBands']): OrderedBand[] =>
   Object.entries(bands).map(([id, b]) => ({ id, ...b })).sort((a, b) => a.min - b.min);
 
+/** Factor ids must be unique: the UI tracks rows by id, and fixtures assert on ids. */
 const uniqueIdProblems = (kb: Kb): string[] => {
   const ids = kb.factors.map((f) => f.id);
   return ids.flatMap((id, i) => (ids.indexOf(id) === i ? [] : [`factors[${i}].id: duplicate id "${id}"`]));
 };
 
+/**
+ * Bands must cover every score from 0 with no gaps or overlaps, and summaries may only use tokens the
+ * service fills. Checked on bands already sorted by `min`.
+ */
 const bandProblems = (ordered: readonly OrderedBand[]): string[] => {
   const allowedTokens = new Set<string>(summaryTokens);
   return [
@@ -112,6 +119,7 @@ export const parseKb = (raw: string, source: string): LoadedKb => {
   return { ...kb, orderedBands };
 };
 
+/** The KB being served. Replaced only by a successful reload, so a bad edit never takes it away. */
 let current: LoadedKb | undefined;
 
 /** The active KB, read once and cached. Throws KbValidationError if the KB is invalid. */

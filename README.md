@@ -23,13 +23,16 @@ npm --prefix frontend install && npm --prefix frontend start   # http://localhos
 
 ```bash
 docker compose up --build         # http://localhost:8080  (backend also on :3000)
+docker compose down               # stop and remove the containers
 ```
+
+Under Docker the UI is on **:8080**, not :4200 (that port is only used by `npm start`).
 
 - `backend/Dockerfile` is a multi-stage, Fargate-ready image: non-root, configured by env, with a `HEALTHCHECK` on `GET /health` (which returns the active KB version) and only production dependencies. It runs locally only.
 - `frontend/Dockerfile` builds Angular and serves it with nginx, which proxies `/policy` and `/health` to the backend, so the browser stays same-origin.
 - Compose mounts the repo root **read-only** at `/app/kb`, so `KB_PATH=/app/kb/risk-kb.json` is the live file. Edit `risk-kb.json` on the host and the next quote uses it: no rebuild, no restart.
 
-Sample requests, one per band plus the compound and flood-zone demos, are in [`backend/requests/`](backend/requests):
+Sample requests are in [`backend/requests/`](backend/requests): one per band (`standard`, `elevated`, `high-risk`), plus the `compound` and `flood-zone` demos. `standard` and `high-risk` use UK postcodes; the others use Eircodes.
 
 ```bash
 curl -s -XPOST localhost:3000/policy/quote -H 'Content-Type: application/json' -d @backend/requests/high-risk.json
@@ -41,6 +44,61 @@ curl -s -XPOST localhost:3000/policy/quote -H 'Content-Type: application/json' -
 npm --prefix backend test         # Jest: engine, loader, handler, KB-driven scenarios, configurability proof
 npm --prefix frontend test        # Vitest: form validators, signal state, result panel, badge
 ```
+
+## How it works
+
+```
+browser ── POST /policy/quote ──▶ server.ts (node:http, or API Gateway in a real Lambda)
+                                    └─▶ handler(event, context)   parse JSON, validate with Zod, route
+                                          └─▶ getQuote(request, kb)   quote/service.ts: premium formula, currency, response
+                                                └─▶ scoreRisk / findBand   engine/: evaluate each KB factor, sum points, pick the band
+                                    risk-kb.json ──▶ kb/loader.ts   validated at startup, hot-reloaded on change
+```
+
+| Folder (`backend/src`) | Responsibility |
+|---|---|
+| `handler.ts`, `http/` | Protocol only: the Lambda entry point, route table, CORS and error mapping. No scoring. |
+| `server.ts` | Local adapter from `node:http` to the handler, plus the KB file watcher. No routing or validation. |
+| `quote/` | The request contract (Zod), postcode → currency, and `getQuote`: the brief's premium formula. |
+| `engine/` | Pure scoring: the operator registry, the condition evaluator, points and band lookup. No numbers of its own. |
+| `kb/` | KB types, schema, loader (six checks, each naming the JSON path), hot reload and the Lambda refresh. |
+
+The frontend (`frontend/src/app`) is one standalone page: `quote/quote-page.component` holds the form and the three state signals (`loading`, `quoteResult`, `errorMessage`), `quote-result.component` renders the quote, and `risk-band-badge` is the reusable badge.
+
+### API
+
+`POST /policy/quote` takes the brief's six fields and returns the brief's seven fields, plus `currency`, `riskBandLabel` and `kbVersion`:
+
+```bash
+curl -s -XPOST localhost:3000/policy/quote -H 'Content-Type: application/json' \
+  -d '{ "customerName": "Cara Compound", "age": 40, "propertyType": "Flat", "propertyValue": 600000, "postcode": "SW1A 1AA", "previousClaims": 0 }'
+```
+
+```json
+{
+  "monthlyPremium": 45, "annualPremium": 540, "currency": "GBP",
+  "riskBand": "ELEVATED", "riskBandLabel": "ELEVATED", "riskScore": 45,
+  "riskSummary": "Elevated risk profile: 2 risk factor(s) applied for a total score of 45. A loading has been added to the premium.",
+  "coverageDetails": { "basePremium": 300, "riskMultiplier": 1.5, "coverageLoadFactor": 1.2, "sumInsured": 600000,
+                       "items": [{ "id": "buildings", "description": "Buildings cover" }] },
+  "appliedFactors": [
+    { "id": "property_type_flat", "description": "Flat — higher shared risk", "points": 10, "occurrences": 1 },
+    { "id": "flat_high_value", "description": "Flat valued over £500,000 — higher shared-building exposure", "points": 35, "occurrences": 1 }
+  ],
+  "kbVersion": "1.3.0"
+}
+```
+
+| Field | Rule |
+|---|---|
+| `customerName` | 1–100 characters. Collected, but never scored. |
+| `age` | Integer, 18–120. |
+| `propertyType` | `House`, `Flat` or `Bungalow`. |
+| `propertyValue` | Greater than 0, in the postcode's currency. |
+| `postcode` | A UK postcode or an Irish Eircode; upper-cased. |
+| `previousClaims` | Integer, 0–20, in the last 5 years. |
+
+Errors: **400** `{ error, issues: [{ field, message }] }` names every invalid field, for example `{ "field": "postcode", "message": "Must be a valid UK postcode or Eircode" }`. **404** `{ error }` for an unknown route. **500** `{ error, requestId }` with no internal detail (that goes to the server log). `GET /health` returns `{ status, kbVersion, schemaVersion, factorCount }`.
 
 ## The Knowledge Base
 
@@ -87,6 +145,7 @@ Every scoring rule is in `risk-kb.json`. Changing a rule edits that file and its
 In Claude Code, describe the rule in plain English. Invoke the skill by name, or just describe the rule and it triggers on its own:
 
 ```
+/kb-factor add a flood zone factor: +15 if the postcode starts with EX or PL
 /kb-factor add a flood zone factor for Eircodes in routing areas T12 or N37, +15
 claims penalty should be 20 not 15
 pause the flat factor
@@ -94,8 +153,8 @@ pause the flat factor
 
 The skill ([`.claude/skills/kb-factor/SKILL.md`](.claude/skills/kb-factor/SKILL.md)) then:
 
-1. **Restates the rule in KB terms** before editing, for example `flood_zone: postcode starts_with [T12, N37], +15`. If the wording is ambiguous ("over" or "or more"?), it asks.
-2. **Edits `risk-kb.json`** and bumps `version`.
+1. **Restates the rule in KB terms** before editing, for example `flood_zone: postcode starts_with [EX, PL], +15`. If the wording is ambiguous ("over" or "or more"?), it asks.
+2. **Edits `risk-kb.json`** and bumps `version`, in one save, so the new rule never goes live under the old version.
 3. **Adds or updates a scenario fixture** in `backend/test/scenarios/<id>.json`, with one request that triggers the factor, one near-miss that doesn't, and the arithmetic in `why`. For a new factor it also adds a sample request in `backend/requests/<id>.json`.
 4. **Proves the change**: the KB loads, `git status` shows nothing changed under `src/`, `npx jest` passes, `/health` shows the new `kbVersion`, a `curl` quote lists the factor in `appliedFactors`, and the UI shows it.
 5. **Logs the change** in `AGENT_LOG.md`.
@@ -122,11 +181,11 @@ The skill ([`.claude/skills/kb-factor/SKILL.md`](.claude/skills/kb-factor/SKILL.
    - Field names and enum values must match the request exactly: `propertyType` is `House`, `Flat` or `Bungalow`.
 
    ```json
-   { "id": "flood_zone", "points": 15, "description": "Property in a flood-risk Eircode routing area",
-     "condition": { "field": "postcode", "operator": "starts_with", "values": ["T12", "N37"] } }
+   { "id": "flood_zone_uk", "points": 15, "description": "Property in a flood-risk postcode area",
+     "condition": { "field": "postcode", "operator": "starts_with", "values": ["EX", "PL"] } }
    ```
 
-2. **Bump `version`**: minor (`1.1.1` → `1.2.0`) for a factor added, changed, disabled or removed, and patch for a wording-only change. Leave `schemaVersion` unchanged.
+2. **Bump `version`** in the same save: minor (`1.3.0` → `1.4.0`) for a factor added, changed, disabled or removed, and patch for a wording-only change. Leave `schemaVersion` unchanged.
 3. **Update the fixtures.**
    - A new factor needs `backend/test/scenarios/<id>.json`, with each expected score worked out by hand. The coverage test fails if a factor has no fixture.
    - A change or removal moves expected scores in existing fixtures. Update them and note which moved and why.
@@ -176,11 +235,15 @@ In production, rule sets would be version-controlled like code:
 
 ```
 risk-kb.json        the Knowledge Base
-backend/            Lambda-style handler(event, context), node:http adapter, risk engine, Jest tests, Dockerfile
+backend/
+  src/              handler, server, quote/, engine/, kb/, http/ (see "How it works")
+  test/             KB-driven scenario fixtures, configurability proof, coverage check
+  requests/         sample requests for curl and the demo
+  Dockerfile        multi-stage, non-root image with a HEALTHCHECK
 frontend/           Angular 22 standalone app: signals, Reactive Forms, hand-written CSS, Dockerfile + nginx.conf
 docker-compose.yml  the whole app on :8080 with the KB mounted live
 package.json        root npm start: runs both services via scripts/start.mjs (no dependencies)
-specs/              mission, tech stack, roadmap
+specs/              mission, tech stack, roadmap, review prep
 CLAUDE.md, .claude/ agent instructions and project skills
 AGENT_LOG.md        the agent interaction log
 SOLUTION.md         design summary

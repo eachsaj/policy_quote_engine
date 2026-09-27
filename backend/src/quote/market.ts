@@ -2,6 +2,7 @@
 // Not a scoring input: the KB's numbers are the same in every market, with no conversion.
 
 export const currencies = ['GBP', 'EUR'] as const;
+/** A currency a quote can be shown in. Also the allowed keys of a KB factor's `descriptions`. */
 export type Currency = (typeof currencies)[number];
 
 // UK postcode: outward code (1–2 area letters, a district digit, optionally a digit or letter, as in SW1A)
@@ -21,6 +22,7 @@ export const markets: ReadonlyArray<{ readonly id: 'GB' | 'IE'; readonly pattern
   { id: 'IE', pattern: eircode, currency: 'EUR' },
 ];
 
+/** True for a UK postcode or an Eircode (case-insensitive, space optional). Used by the request schema. */
 export const isKnownPostcode = (postcode: string): boolean => markets.some((m) => m.pattern.test(postcode));
 
 /** The currency for a postcode the request schema has already accepted. */

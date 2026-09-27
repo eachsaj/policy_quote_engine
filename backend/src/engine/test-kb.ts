@@ -3,7 +3,8 @@
 import { parseKb } from '../kb/loader';
 import type { Kb, LoadedKb } from '../kb/types';
 
-export const baseKb: Kb = {
+/** Bands and premium inputs as in the brief, with no factors: each spec adds only the factors it tests. */
+const baseKb: Kb = {
   version: 'test',
   schemaVersion: 1,
   basePremium: 300,

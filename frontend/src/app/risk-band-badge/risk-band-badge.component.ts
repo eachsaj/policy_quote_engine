@@ -13,8 +13,11 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
   host: { class: 'badge', '[attr.data-band]': 'riskBand()' },
 })
 export class RiskBandBadgeComponent {
+  /** The KB band id, e.g. HIGH_RISK. Selects the colour only; it is shown as text only when there is no label. */
   readonly riskBand = input.required<string>();
+  /** The KB's customer-facing label, e.g. "HIGH RISK". */
   readonly label = input<string>();
 
+  /** The badge text: the label, falling back to the band id. */
   protected readonly text = computed(() => this.label() ?? this.riskBand());
 }

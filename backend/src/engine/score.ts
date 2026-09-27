@@ -9,6 +9,7 @@ export interface AppliedFactor {
   readonly occurrences: number; // 1 unless perOccurrence
 }
 
+/** The total score and the factors that made it up. The sum of `appliedFactors[].points` is `score`. */
 export interface RiskScore {
   readonly score: number;
   readonly appliedFactors: readonly AppliedFactor[];

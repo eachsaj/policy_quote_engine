@@ -15,6 +15,7 @@ export const quoteRequestSchema = z.object({
   previousClaims: z.number().int().min(0).max(20), // in the last 5 years
 });
 
+/** A validated request: the six fields after trimming and upper-casing. */
 export type QuoteRequest = z.infer<typeof quoteRequestSchema>;
 
 /** Request fields that are collected but never scored. The loader rejects KB conditions on them; the service strips them. */

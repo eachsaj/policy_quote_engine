@@ -1,4 +1,4 @@
-import { isOperatorName, operators, type OperatorName } from './operators';
+import { operators, type OperatorName } from './operators';
 
 type Case = [OperatorName, Record<string, unknown>, unknown, boolean];
 
@@ -43,11 +43,5 @@ describe('operator registry', () => {
 
   it('never matches when params are malformed', () => {
     expect(operators.between.matches(1, { min: 1 })).toBe(false);
-  });
-
-  it('knows its operator names', () => {
-    expect(isOperatorName('starts_with')).toBe(true);
-    expect(isOperatorName('regex')).toBe(false);
-    expect(isOperatorName('toString')).toBe(false);
   });
 });

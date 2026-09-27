@@ -22,6 +22,10 @@ const ukPostcodeOrEircode: ValidatorFn = (c: AbstractControl): ValidationErrors 
 const notBlank: ValidatorFn = (c: AbstractControl): ValidationErrors | null =>
   typeof c.value === 'string' && c.value.trim().length > 0 ? null : { required: true };
 
+/**
+ * The six-field reactive form, with validators matching the backend's Zod schema field by field.
+ * Numeric fields start empty (null), except previous claims, which defaults to 0.
+ */
 export const buildQuoteForm = (fb: FormBuilder) =>
   fb.group({
     customerName: fb.nonNullable.control('', [notBlank, Validators.maxLength(100)]),
@@ -32,6 +36,7 @@ export const buildQuoteForm = (fb: FormBuilder) =>
     previousClaims: fb.control<number | null>(0, [Validators.required, integer, Validators.min(0), Validators.max(20)]),
   });
 
+/** The form's type, inferred from buildQuoteForm so the controls stay strongly typed. */
 export type QuoteForm = ReturnType<typeof buildQuoteForm>;
 
 /** Form labels, also used to name fields in backend 400 messages. */
@@ -44,6 +49,7 @@ export const fieldLabels: Readonly<Record<keyof QuoteRequest, string>> = {
   previousClaims: 'Previous claims in the last 5 years',
 };
 
+/** Narrows the select's value (null until a type is chosen) to a PropertyType, without a cast. */
 const isPropertyType = (v: unknown): v is PropertyType => propertyTypes.some((p) => p === v);
 
 /** Builds the request by narrowing the raw form value: no `!` and no `as`. Returns null if anything is missing. */
