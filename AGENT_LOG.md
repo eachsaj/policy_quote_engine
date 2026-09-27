@@ -581,3 +581,26 @@ Chronological record of significant agent interactions while building PolicyQuot
   - The factor edit and the version bump were saved as two separate edits. The server log shows a reload at `kbVersion 1.1.1` with 7 factors before the 1.2.0 one, so for about a second the new rule was served under the old version, and a quote in that window would have been mislabelled. For the live demo, the factor and the version bump go in one save.
   - In the UI check, the form still held values edited since the last run, and property type stayed House. The agent reported the House result (30 ELEVATED) instead of claiming the Flat fixture case (40).
   - The other T12/N37 examples in specs, skills, README and the configurability proof (frozen baseline KB) were left as generic examples on purpose.
+
+## Entry 30: KB refresh for a deployed Lambda (KB_REFRESH_SECONDS)
+
+- **When:** 2026-09-27 20:23
+- **Phase / skill:** Post-Phase 8 bonus (KB versioning) / `lambda-handler` (handler, server), touching `kb/*` (risk-engine area)
+- **Prompt:** "check the KB versioning capability ,Add a version field to the KB and return the active KB version in the API response. Show how you'd manage breaking KB schema changes without redeploying the Lambda." After the check, the user answered "add to PR 7 and merge to main".
+- **Output:**
+  - The check found `version`, `kbVersion` and the `schemaVersion` gate already in place. A live run on the server showed a rule change, an additive change, a rejected `schemaVersion: 2` and a rollback, all without a restart.
+  - It also found a gap: hot reload lived only in `server.ts`, so a deployed Lambda (handler only, `loadKb()` cached per container) would pick up a new KB only at the next cold start.
+  - New `kb/refresh.ts` `currentKb()`: with `KB_REFRESH_SECONDS` set, it stats `KB_PATH` at most once per interval and calls `reloadKb()` when the mtime changes. Off by default. The handler uses it instead of `loadKb()`, and a shared `reportReload()` is now used by `server.ts` too.
+- **What changed:** `backend/src/kb/refresh.ts` (new), `backend/src/kb/refresh.spec.ts` (new, 4 tests through `handler()` with a mocked clock), `backend/src/handler.ts`, `backend/src/server.ts`, `README.md` ("Picking up a new KB" table under KB versioning), `specs/tech-stack.md`, `.claude/skills/lambda-handler/references/handler-pattern.md`, `CLAUDE.md`, `AGENT_LOG.md`
+- **Why:**
+  - The brief's bonus asks for breaking schema changes "without redeploying the Lambda". The earlier answer was only fully true for the local server and Docker.
+  - Refresh logic sits in `kb/`, so the handler stays protocol-only and the change is two lines there. The KB is still a local file (on EFS in a real deployment), so brief constraint 5 still holds.
+  - Verified:
+    - tsc and lint clean; Jest 166/166 (+4); all skill and quality-gate greps empty.
+    - Restarted `npm start`: health, the 400 case and four samples OK. A KB points edit went live without a restart, invalid JSON was rejected and quotes kept working, and the KB was restored exactly.
+    - A standalone script calling `handler()` with `KB_REFRESH_SECONDS=2` and no server: cold start 1.2.0 → a 1.3.0 publish is not seen within the interval → 1.3.0 after 2 s → `schemaVersion 2` rejected and 1.3.0 keeps serving.
+- **Rejected / corrected:**
+  - The first draft took the first check's mtime as a baseline without reloading, so an edit made between the cold-start load and the first check would never be picked up. It was caught while writing the spec, before running it. Fixed: the first check always reloads (one extra parse per container).
+  - Putting the refresh inside `handler.ts` was rejected: it's KB-loading policy, not protocol.
+  - Defaulting the refresh to on was rejected: under `npm start` it would duplicate the watcher's reloads, so it's off unless `KB_REFRESH_SECONDS` is set.
+  - `SOLUTION.md` was not changed (300-word limit); README carries the detail.

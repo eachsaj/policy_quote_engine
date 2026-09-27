@@ -134,8 +134,17 @@ The skill ([`.claude/skills/kb-factor/SKILL.md`](.claude/skills/kb-factor/SKILL.
 
 Two version numbers do different jobs:
 
-- **`version` (the rules).** Bumped on every rule change and returned in every quote, so each quote records the rule set that priced it. A new version is live as soon as the file changes, because the backend watches `KB_PATH` and swaps in a valid KB atomically.
+- **`version` (the rules).** Bumped on every rule change and returned in every quote, so each quote records the rule set that priced it. A new version is live as soon as the file changes, without a restart or a redeploy (see "Picking up a new KB" below).
 - **`schemaVersion` (the shape).** Bumped only when the KB's structure changes in a way old code can't read. The loader lists the shapes it supports (`supportedSchemaVersions`) and rejects any other with a clear error.
+
+Picking up a new KB, in each place the handler runs:
+
+| Runs as | How a changed `KB_PATH` goes live |
+|---|---|
+| `npm start` / Docker | `server.ts` watches the file (`fs.watchFile`, stat polling) and reloads within a second. |
+| A Lambda container | No `server.ts`, so no watcher. Set **`KB_REFRESH_SECONDS`** (for example `30`): the handler stats the file at most once per interval and reloads when its mtime changes ([`kb/refresh.ts`](backend/src/kb/refresh.ts)). The KB file sits on a mounted file system (such as EFS) that the publishing pipeline writes to, so there is no redeploy and no wait for a cold start. Unset or `0` means a container keeps the KB it loaded at cold start. |
+
+Both paths go through the same `reloadKb()`, so the rules below hold in both. `backend/src/kb/refresh.spec.ts` drives the handler as a warm container would.
 
 How breaking schema changes are handled **without redeploying**:
 

@@ -141,7 +141,9 @@ Response codes:
 
 This adapter is only a translator. It builds an `HttpEvent`, calls `handler` and writes the result. It contains no routing, no validation and no business logic. It loads the KB before it listens, so a bad KB fails at startup rather than on the first request.
 
-It also owns the KB hot reload the live demo depends on. `fs.watchFile` polls the file's stat, which works across Docker Desktop bind mounts where inotify events are unreliable. A valid edit is swapped in atomically by `reloadKb()`; an invalid one is logged to stderr and the last good KB keeps serving.
+It also owns the KB hot reload the live demo depends on. `fs.watchFile` polls the file's stat, which works across Docker Desktop bind mounts where inotify events are unreliable. A valid edit is swapped in atomically by `reloadKb()`; an invalid one is logged to stderr and the last good KB keeps serving. The log line comes from `reportReload()` in `kb/refresh.ts`, which the handler's own refresh also uses.
+
+A deployed Lambda has no `server.ts`, so the handler gets its KB from `currentKb()` (`kb/refresh.ts`) rather than `loadKb()`. With `KB_REFRESH_SECONDS` set, it stats `KB_PATH` at most once per interval and calls `reloadKb()` when the mtime changes. It's off by default, because the local server's watcher covers `npm start` and Docker.
 
 ```ts
 import { randomUUID } from 'node:crypto';
