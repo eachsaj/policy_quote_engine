@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import type { QuoteResponse } from '../models/quote';
 import { QuotePageComponent } from './quote-page.component';
 
-const validForm = { customerName: 'A Customer', age: 40, propertyType: 'House' as const, propertyValue: 250000, postcode: 'sw1a 1aa', previousClaims: 0 };
+const validForm = { customerName: 'A Customer', age: 40, propertyType: 'House' as const, propertyValue: 250000, postcode: 'd02 x285', previousClaims: 0 };
 
 const mockResponse: QuoteResponse = {
   monthlyPremium: 45, annualPremium: 540, riskBand: 'ELEVATED', riskBandLabel: 'ELEVATED', riskScore: 30,
@@ -41,7 +41,7 @@ describe('QuotePageComponent signal state', () => {
 
     const req = http.expectOne('/policy/quote');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ ...validForm, postcode: 'SW1A 1AA' });
+    expect(req.request.body).toEqual({ ...validForm, postcode: 'D02 X285' });
     req.flush(mockResponse);
 
     expect(page.loading()).toBe(false);

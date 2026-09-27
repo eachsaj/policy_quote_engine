@@ -48,7 +48,7 @@ describe('KB loader', () => {
     ['3. between without max', (kb) => { kb.factors[1] = { ...kb.factors[1], condition: { field: 'previousClaims', operator: 'between', min: 1 } }; return kb; },
       'factors.1.condition.max: between:'],
     ['3. bad operator nested in a compound', (kb) => {
-      kb.factors.push({ id: 'flat_high_value', description: 'Flat AND over £500k', points: 35,
+      kb.factors.push({ id: 'flat_high_value', description: 'Flat AND over €500k', points: 35,
         condition: { all: [{ field: 'propertyType', operator: 'eq', value: 'Flat' }, { field: 'propertyValue', operator: 'gt' }] } });
       return kb;
     }, '.condition.all.1.value: gt:'],

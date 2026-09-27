@@ -508,3 +508,41 @@ Chronological record of significant agent interactions while building PolicyQuot
 - **Rejected / corrected:**
   - Entry 24's "`main` has only the initial commit" is superseded here, not edited, per the log rules.
   - The Phase 8 changes themselves are still uncommitted and are **not on `main` yet**. The agent did not commit or push them without the user's go-ahead.
+
+## Entry 26: Root npm start launches backend and frontend
+
+- **When:** 2026-09-27 19:36
+- **Phase / skill:** Post-Phase 8 developer experience / no project skill (root tooling only; `agent-log` for this entry)
+- **Prompt:** "the web application is not launching" / "connection refused", then "add a single npm start at the root to launch both"
+- **Output:** Diagnosis first: nothing was listening on :3000 or :4200, and both services started cleanly with their own `npm start`, so no code was broken. The fix was a root `package.json` whose `start` runs `scripts/start.mjs`. That zero-dependency Node launcher runs `npm ci` where `node_modules` is missing, spawns both `npm start`s with `[backend]` / `[frontend]` prefixes, and stops both on Ctrl+C or when either exits. Verified: `/health` 1.1.0, `:4200` 200, a quote through the proxy, and SIGINT left both ports free.
+- **What changed:** `package.json` (new, root), `scripts/start.mjs` (new), `README.md` (Run it: 1 command, per-package commands kept), `specs/tech-stack.md` (layout), `CLAUDE.md` (commands)
+- **Why:** The "connection refused" came from starting only one service, or neither. One command removes that failure for reviewers and for the live demo (R6). The brief's "each service starts with a single `npm start`" still holds, because the per-package scripts are untouched.
+- **Rejected / corrected:**
+  - `concurrently` was rejected: it would need a root `npm install` before the one command works.
+  - npm workspaces were rejected: the spec says there are no workspaces, and workspaces would change how lockfiles are installed.
+  - The spec line "two independent packages, each started with its own `npm start`" was extended, not replaced, because this is an addition.
+
+## Entry 27: Irish localisation: euro and Eircode
+
+- **When:** 2026-09-27 19:40
+- **Phase / skill:** Post-Phase 8 change request / `lambda-handler` (Zod schema), `angular-signals-component` (form, formatter), `kb-factor` rules (KB edit + version bump), `kb-driven-tests` (fixtures)
+- **Prompt:** "change the currency to euro and pincode to irish Eircode . update the knowlwdge if needed". The agent asked two questions, because CLAUDE.md says the brief's KB factors are kept verbatim. Answers: "Same numbers, € symbol" and "Keep `postcode`, validate Eircode".
+- **Output:** 
+  - Currency: € everywhere, via `Intl` `en-IE`/`EUR` and `toEuros`/`CENTS_PER_EURO` in `service.ts`.
+  - The `postcode` field is validated as an Eircode, `/^[ACDEFHKNPRTVWXY]\d[\dW] ?[\dACDEFHKNPRTVWXY]{4}$/i`, in both Zod and the form validator, and labelled "Eircode".
+  - KB 1.1.0 → 1.1.1: two factor descriptions £ → €. Thresholds, points, bands and the premium formula are unchanged.
+  - Sample requests and fixtures moved to Irish Eircodes (D02 X285, H91 E2K3, D04 C932, T12 X70A). The flood-zone demo prefixes EX/PL became routing keys T12 (Cork city) / N37 (Athlone).
+  - New `quote/request.spec.ts` (8 cases) and 4 new form-validator cases: no-space form, D6W, UK format rejected, and the letter B rejected.
+- **What changed:** `risk-kb.json`, `backend/src/quote/{request,service}.ts`, `request.spec.ts` (new), `service.spec.ts`, `engine/{evaluate,operators,score}.spec.ts`, `kb/loader.spec.ts`, `backend/requests/*.json`, `backend/test/scenarios/{_base,bands,property_value_high,flat_high_value}.json`, `backend/test/configurability/add-{factor,or-factor}.json`, `frontend/src/app/models/quote.ts`, `quote/quote-form{,.spec}.ts`, `quote-page.component.{html,ts,spec.ts}`, `quote-result.component{,.spec}.ts`, `README.md`, `SOLUTION.md` (266 words), `CLAUDE.md`, `specs/{mission,tech-stack,roadmap,review-prep}.md`, skills `kb-factor`, `angular-signals-component`, `lambda-handler`, `kb-driven-tests`, `risk-engine` (examples only)
+- **Why:**
+  - The user's market is Ireland. Keeping the numbers kept every scenario expectation valid, so the scoring proof (R1) is untouched and the change is labels plus one validation rule.
+  - Keeping the field name `postcode` keeps the brief's six-field contract and every KB `condition.field`.
+  - The version bump follows README "KB versioning": quotes priced on 1.1.1 now show € wording.
+  - Verified: backend 154/154 tests, typecheck and lint clean. Frontend 42/42 (including the 4 new validator cases). All four quality gates print nothing. Root `npm start` → the five samples through the :4200 proxy give STANDARD 10, ELEVATED 30, HIGH_RISK 120, ELEVATED 45 and STANDARD 0 (no flood factor in the live KB, as before). `SW1A 1AA` → 400 "Must be a valid Eircode".
+- **Rejected / corrected:**
+  - Converting £ amounts to € (for example 750k → about 870k) was rejected by the user: it would change the brief's KB values and move the fixtures.
+  - Renaming the field to `eircode` was rejected: it breaks the brief's request contract.
+  - The spec rule "five factors verbatim" is now deliberately broken for the description text only (£ → €), and this is recorded in `specs/review-prep.md` R1.
+  - `backend/test/configurability/_baseline-kb.json` was **left with £**, on purpose: it is the frozen v1.0.0 snapshot of the brief's KB, and its text is not asserted anywhere.
+  - The review-prep and `kb-factor` note about one-letter UK postcode areas over-matching ("B" → BA/BS) was rewritten for Eircode: routing keys are a fixed 3 characters, so the risk is a partial key such as "D0" spanning D01–D08.
+  - `AGENT_LOG.md` history entries keep their UK examples and are not rewritten.

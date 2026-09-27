@@ -39,7 +39,7 @@ import { z } from 'zod';
 // Exactly the brief's form options. Do not add options the brief lacks.
 export const propertyTypes = ['House', 'Flat', 'Bungalow'] as const;
 
-const ukPostcode = /^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$/i;
+const eircode = /^[ACDEFHKNPRTVWXY]\d[\dW] ?[\dACDEFHKNPRTVWXY]{4}$/i;
 
 // The brief's six form fields, in form order (specs/tech-stack.md "Request contract").
 export const quoteRequestSchema = z.object({
@@ -47,14 +47,14 @@ export const quoteRequestSchema = z.object({
   age: z.number().int().min(18).max(120),
   propertyType: z.enum(propertyTypes),
   propertyValue: z.number().positive(),
-  postcode: z.string().trim().regex(ukPostcode, 'Must be a valid UK postcode').transform((p) => p.toUpperCase()),
+  postcode: z.string().trim().regex(eircode, 'Must be a valid Eircode').transform((p) => p.toUpperCase()),
   previousClaims: z.number().int().min(0).max(20), // in the last 5 years
 });
 
 export type QuoteRequest = z.infer<typeof quoteRequestSchema>;
 ```
 
-Postcodes are upper-cased here so a KB `starts_with ["EX","PL"]` matches `"ex4 1aa"`. The frontend's `models/quote.ts` and form validators mirror this schema (`angular-signals-component`); change both in the same turn.
+Postcodes are upper-cased here so a KB `starts_with ["T12","N37"]` matches `"t12 x70a"`. The frontend's `models/quote.ts` and form validators mirror this schema (`angular-signals-component`); change both in the same turn.
 
 ## Handler (`backend/src/handler.ts`)
 
@@ -193,7 +193,7 @@ import { handler } from './handler';
 import type { HttpEvent } from './http/types';
 
 const ctx = { awsRequestId: 'test' };
-const validRequest = { customerName: 'A Customer', age: 40, propertyType: 'House', propertyValue: 250000, postcode: 'SW1A 1AA', previousClaims: 0 };
+const validRequest = { customerName: 'A Customer', age: 40, propertyType: 'House', propertyValue: 250000, postcode: 'D02 X285', previousClaims: 0 };
 const post = (body: unknown): HttpEvent => ({ httpMethod: 'POST', path: '/policy/quote', body: JSON.stringify(body) });
 
 it('returns 200 with the full response shape', async () => {

@@ -11,8 +11,8 @@ export interface QuoteRequest {
   readonly customerName: string;  // 1–100 chars after trim; never scored
   readonly age: number;           // integer 18–120
   readonly propertyType: PropertyType;
-  readonly propertyValue: number; // > 0, in £
-  readonly postcode: string;      // UK postcode; the backend upper-cases it
+  readonly propertyValue: number; // > 0, in €
+  readonly postcode: string;      // Irish Eircode; the backend upper-cases it
   readonly previousClaims: number; // integer 0–20, in the last 5 years
 }
 

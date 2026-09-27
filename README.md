@@ -2,18 +2,22 @@
 
 A single-page home insurance quote tool: an Angular frontend, a Lambda-style Node.js backend, and a risk engine whose rules live entirely in a JSON Knowledge Base, **[`risk-kb.json`](risk-kb.json) at the repo root**. Adding, changing or removing a risk factor is a KB edit, with no code change.
 
-## Run it (4 commands)
+## Run it (1 command)
 
 Requires Node.js 22 or 24 LTS.
 
 ```bash
-npm --prefix backend install
-npm --prefix backend start        # http://localhost:3000  (POST /policy/quote, GET /health)
-npm --prefix frontend install
-npm --prefix frontend start       # http://localhost:4200  (proxies /policy and /health to :3000)
+npm start                         # from the repo root: backend :3000 + frontend :4200
 ```
 
-Run the backend and frontend `start` commands in separate terminals, then open http://localhost:4200.
+Then open http://localhost:4200. The root `npm start` runs [`scripts/start.mjs`](scripts/start.mjs), which has no dependencies. It installs each package's dependencies on the first run (`npm ci`), starts both services with `[backend]` / `[frontend]` prefixed output, and stops both on Ctrl+C or when either one exits.
+
+Each package still starts on its own, as the brief requires:
+
+```bash
+npm --prefix backend install && npm --prefix backend start     # http://localhost:3000  (POST /policy/quote, GET /health)
+npm --prefix frontend install && npm --prefix frontend start   # http://localhost:4200  (proxies /policy and /health to :3000)
+```
 
 ### Or with Docker (1 command)
 
@@ -50,10 +54,10 @@ npm --prefix frontend test        # Vitest: form validators, signal state, resul
 | `riskBands` | score ranges, plus each band's `riskMultiplier`, badge `label` and `summary` template |
 | `factors[]` | `id`, customer-facing `description`, a `condition`, `points`, optional `perOccurrence` and `enabled` |
 
-A `condition` is either a leaf, `{ "field", "operator", …params }`, or a group, `{ "all": [...] }`, `{ "any": [...] }` or `{ "not": {...} }`, nested to any depth. So "Flat AND over £500k" is data:
+A `condition` is either a leaf, `{ "field", "operator", …params }`, or a group, `{ "all": [...] }`, `{ "any": [...] }` or `{ "not": {...} }`, nested to any depth. So "Flat AND over €500k" is data:
 
 ```json
-{ "id": "flat_high_value", "points": 35, "description": "Flat valued over £500,000 — higher shared-building exposure",
+{ "id": "flat_high_value", "points": 35, "description": "Flat valued over €500,000 — higher shared-building exposure",
   "condition": { "all": [ { "field": "propertyType", "operator": "eq", "value": "Flat" },
                           { "field": "propertyValue", "operator": "gt", "value": 500000 } ] } }
 ```
@@ -96,6 +100,7 @@ risk-kb.json        the Knowledge Base
 backend/            Lambda-style handler(event, context), node:http adapter, risk engine, Jest tests, Dockerfile
 frontend/           Angular 22 standalone app: signals, Reactive Forms, hand-written CSS, Dockerfile + nginx.conf
 docker-compose.yml  the whole app on :8080 with the KB mounted live
+package.json        root npm start: runs both services via scripts/start.mjs (no dependencies)
 specs/              mission, tech stack, roadmap
 CLAUDE.md, .claude/ agent instructions and project skills
 AGENT_LOG.md        the agent interaction log

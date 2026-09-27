@@ -73,7 +73,7 @@ Every phase follows the same loop, so the log shows intentional engineering:
   - Band boundaries 25/26 and 60/61.
   - `perOccurrence` maths (1, 2, 3 and 5 claims).
   - Each operator, including `not` and `any`.
-  - A compound "Flat AND > £500k".
+  - A compound "Flat AND > €500k".
   - **Configurability proof**, matching the brief's three examples. The same engine runs against in-memory copies of a frozen baseline KB (`test/configurability/_baseline-kb.json`, decided in Phase 6) where:
     - the flood-zone factor is added
     - the claims weight goes from 15 to 20
@@ -121,7 +121,7 @@ Every phase follows the same loop, so the log shows intentional engineering:
   - customer name
   - age
   - property type (House / Flat / Bungalow)
-  - property value (£)
+  - property value (€)
   - postcode
   - previous claims in the last 5 years
 
@@ -135,19 +135,19 @@ Every phase follows the same loop, so the log shows intentional engineering:
   - It displays the KB label, "STANDARD / ELEVATED / HIGH RISK", exactly as the brief shows it.
   - It styles itself through `data-band`, with a neutral fallback for unknown bands.
 - Results panel:
-  - Monthly and annual premium (£).
+  - Monthly and annual premium (€).
   - The badge.
   - The plain-English risk summary.
   - The **active risk factors applied**: an `@for` over `appliedFactors`, showing the KB `description` and points for each.
   - The coverage breakdown and `kbVersion`.
-- `computed()` for sorted factors, total points and formatted £ premiums. `effect()` only moves focus to the results and announces them through `aria-live`.
+- `computed()` for sorted factors, total points and formatted € premiums. `effect()` only moves focus to the results and announces them through `aria-live`.
 - Hand-written responsive CSS (no Material, PrimeNG or Bootstrap), with loading, error and empty states.
 - Tests: the badge for each band and for an unknown band, factor rows rendered from a mock response, and signal transitions (loading → result, and loading → error).
 
 **Done when:** the three band samples render correctly in the browser, and a factor added to the KB appears in the UI with no frontend change.
 
 ## Phase 6: Bonus features and demo rehearsal (R1, R6)
-- **Compound AND/OR:** the `flat_high_value` factor ("Flat AND value > £500k, +35") is added to the KB and shown working end to end with `compound.json`. An `any` (OR) example is covered by the tests.
+- **Compound AND/OR:** the `flat_high_value` factor ("Flat AND value > €500k, +35") is added to the KB and shown working end to end with `compound.json`. An `any` (OR) example is covered by the tests.
 - **KB versioning.** `kbVersion` shows in the quote response, `/health` and the UI.
   - Rehearse a `version` bump with hot reload.
   - **Show** how breaking schema changes are handled without redeploying, using the "KB versioning" section of the README and a test:
@@ -156,7 +156,7 @@ Every phase follows the same loop, so the log shows intentional engineering:
     - A rollout uses expand/contract: ship code that reads N and N+1, then publish the N+1 KB.
     - In production, rule sets are versioned in git and promoted by a pipeline. The version is selected by `KB_PATH` or a pinned version pointer, with no Lambda redeploy.
 - **Live-change rehearsal with the `kb-factor` skill:**
-  - Add the flood-zone factor (`starts_with` EX or PL, +15) and its fixture.
+  - Add the flood-zone factor (`starts_with` T12 or N37, +15) and its fixture.
   - Run the tests, the curl check and the UI check, with no code edits. Then revert.
   - Time the run.
   - Log the rehearsal honestly, including anything the agent got wrong.
@@ -216,9 +216,9 @@ Each line of the brief maps to the phase that delivers it and the check that pro
 | Explain every line of agent output | 8 | Q&A prep, rehearsal |
 | **Angular frontend** | | |
 | Angular 17+, standalone only, no NgModules | 4 | Scaffold flags, grep for `NgModule` |
-| Reactive form with the 6 fields (name, age, House/Flat/Bungalow, value £, postcode, claims in last 5 yrs) | 4 | Form tests, visual check |
+| Reactive form with the 6 fields (name, age, House/Flat/Bungalow, value €, postcode, claims in last 5 yrs) | 4 | Form tests, visual check |
 | Signals for `loading`, `quoteResult`, `errorMessage` | 4 | Code review, grep for no Subjects |
-| Display monthly £, annual £, badge STANDARD/ELEVATED/HIGH RISK, summary, applied factors from KB | 5 | Band samples in the browser |
+| Display monthly €, annual €, badge STANDARD/ELEVATED/HIGH RISK, summary, applied factors from KB | 5 | Band samples in the browser |
 | Reusable `RiskBandBadgeComponent` with `riskBand` input | 5 | Badge tests |
 | RxJS `HttpClient` → `POST /policy/quote` | 4 | `QuoteService` |
 | **Node.js backend** | | |

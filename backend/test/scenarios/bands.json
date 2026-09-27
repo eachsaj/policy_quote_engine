@@ -3,7 +3,7 @@
     "name": "STANDARD: the base request scores 0",
     "request": {},
     "expect": { "riskScore": 0, "riskBand": "STANDARD", "appliedFactorIds": [], "annualPremium": 360, "monthlyPremium": 30 },
-    "why": "no factor matches age 40, House, £250k, 0 claims → 0 → STANDARD (0–25); 300 × 1.0 × 1.2 = 360; / 12 = 30"
+    "why": "no factor matches age 40, House, €250k, 0 claims → 0 → STANDARD (0–25); 300 × 1.0 × 1.2 = 360; / 12 = 30"
   },
   {
     "name": "STANDARD upper boundary: exactly 25",
@@ -27,7 +27,7 @@
     "name": "HIGH_RISK: every factor type at once",
     "request": { "age": 80, "previousClaims": 2, "propertyType": "Flat", "propertyValue": 900000 },
     "expect": { "riskScore": 120, "riskBand": "HIGH_RISK", "appliedFactorIds": ["age_young_elderly", "previous_claims_low", "property_type_flat", "property_value_high", "flat_high_value"], "annualPremium": 792, "monthlyPremium": 66 },
-    "why": "20 + 15 × 2 + 10 + 25 + 35 (Flat AND > £500k) = 120 → HIGH_RISK (61+); 300 × 2.2 × 1.2 = 792; / 12 = 66"
+    "why": "20 + 15 × 2 + 10 + 25 + 35 (Flat AND > €500k) = 120 → HIGH_RISK (61+); 300 × 2.2 × 1.2 = 792; / 12 = 66"
   },
   {
     "name": "HIGH_RISK: lowest reachable score above 60",

@@ -6,7 +6,7 @@ Written in Phase 8 against the running app and the code. Each "Evidence" item wa
 
 | # | Area (pts) | Status | Evidence |
 |---|---|---|---|
-| R1 | KB design & configurability (25) | ✅ | `risk-kb.json` diffs against the brief as additions only (script, Phase 8). Add, change and remove are proven by `backend/test/configurability/*` against a frozen baseline. The compound factor was added as a KB-only change (Entry 20: nothing under `src/` changed). The live flood-zone edit appeared in the UI with no frontend change (Entry 19). |
+| R1 | KB design & configurability (25) | ✅ | `risk-kb.json` diffs against the brief as additions only (script, Phase 8), apart from the deliberate Irish localisation in 1.1.1: two factor descriptions show € instead of £, and the values are unchanged (Entry 27). Add, change and remove are proven by `backend/test/configurability/*` against a frozen baseline. The compound factor was added as a KB-only change (Entry 20: nothing under `src/` changed). The live flood-zone edit appeared in the UI with no frontend change (Entry 19). |
 | R2 | Agent workflow & skills (20) | ✅ | 23 chronological log entries, each with a real rejection. 6 project skills with reject tables and runnable definitions of done. Commits cite log entries from #11. Rejections include the skill's own flawed rules (Entries 20, 22). |
 | R3 | Angular signals & reactivity (20) | ✅ | Exactly 3 writable signals. `canSubmit`, `announcement`, `sortedFactors` and `totalPoints` are `computed()`. One `effect()`, which only moves focus. `input()` on the badge and result. The Subject import is banned by a lint rule. Factor rows come from `appliedFactors` (a spec renders an unknown factor). |
 | R4 | Lambda handler & risk engine (15) | ✅ | `handler(event, context)` with a route lookup map. Loader with six checks, each naming the JSON path. Operator registry, no `switch` (lint rule and grep). Typed `QuoteResponse` with `appliedFactors`. `/health` returns `kbVersion` in Docker. |
@@ -29,7 +29,7 @@ Final gates (Phase 8): backend `tsc`, lint, **146/146** Jest, build; frontend bu
 - The skill's own rule to patch the *live* KB in the configurability proof. The rehearsal showed it would turn the panel's flood-zone example red (Entry 22).
 - `angular-new-app`'s Tailwind step and global CLI install (constraint 4).
 
-**How does the schema handle a factor that combines two fields ("Flat AND over £500k")?**
+**How does the schema handle a factor that combines two fields ("Flat AND over €500k")?**
 A condition is a leaf or a group: `all` (AND), `any` (OR) or `not`, nested to any depth. The evaluator recurses over the four node kinds and looks operators up in a registry. `flat_high_value` is in the KB now, as pure data:
 `{ "all": [ { "field": "propertyType", "operator": "eq", "value": "Flat" }, { "field": "propertyValue", "operator": "gt", "value": 500000 } ] }`, +35.
 
@@ -37,7 +37,7 @@ A condition is a leaf or a group: `all` (AND), `any` (OR) or `not`, nested to an
 Rules (`version`) and shape (`schemaVersion`) are versioned separately. The KB lives in git; each change is a pull request whose fixtures prove the new scores. A pipeline validates it with the service's own `parseKb`, runs the scenarios and publishes an immutable versioned artefact. The service selects a version by configuration (`KB_PATH` or a pinned pointer), not by redeploying. Every quote carries `kbVersion` as its audit trail. A breaking shape uses expand/contract, and an unsupported `schemaVersion` is rejected while the last good KB keeps serving (`versioning.spec.ts`).
 
 **What would you change?**
-Data minimisation (`SOLUTION.md`). Also: a one-letter postcode area such as "B" over-matches with `starts_with`, so a postcode-area operator is needed. Negative points (discounts) need a floor at 0 in the band lookup.
+Data minimisation (`SOLUTION.md`). Also: a partial Eircode routing key such as "D0" spans D01–D08 with `starts_with`, so a routing-key operator (exact match on the first 3 characters) would be safer. Negative points (discounts) need a floor at 0 in the band lookup.
 
 ## Live-demo script (the panel names a factor)
 

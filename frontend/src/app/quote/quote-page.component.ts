@@ -36,7 +36,7 @@ export class QuotePageComponent {
   protected readonly canSubmit = computed(() => this.formStatus() === 'VALID' && !this.loading());
   protected readonly announcement = computed(() => {
     const q = this.quoteResult();
-    return q ? `Quote ready: ${q.riskBandLabel}, ${q.monthlyPremium.toFixed(2)} pounds a month.` : '';
+    return q ? `Quote ready: ${q.riskBandLabel}, ${q.monthlyPremium.toFixed(2)} euro a month.` : '';
   });
 
   private readonly resultHeading = viewChild<ElementRef<HTMLElement>>('resultHeading');
