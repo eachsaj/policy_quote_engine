@@ -139,3 +139,26 @@ Chronological record of significant agent interactions while building PolicyQuot
   - band ids may appear only as CSS `[data-band]` selectors
 
   No code has been compiled, because `frontend/` doesn't exist yet.
+
+## Entry 11: Align specs, skills and CLAUDE.md with the brief
+
+- **When:** 2026-09-27 17:47
+- **Phase / skill:** Phase 0 (roadmap: fix `lambda-handler`, update `CLAUDE.md`) / `agent-log`
+- **Prompt:** "verify the current skills and plans are aligned with constraints and rules, such as [the brief's 8 constraints, pasted]", then "SOLUTION.md is small", then "align plans, skills, and spec fully aligned with requirement document /Users/saj/agi/Exercise_PolicyQuote 1- AIG.pdf"
+- **Output:** The agent read the brief (8 pages), all specs, skills and references, and reported the design aligned with all 8 constraints on paper but with gaps in the skill files that an agent would copy into code. It then fixed them:
+  - `lambda-handler`: six-field request with `House`/`Flat`/`Bungalow` and `customerName`, KB hot reload in `server.ts`, the Dockerfile from the Containers spec, new reject rows and checks
+  - a stronger no-numbers grep, `no-magic-numbers` and an outbound-call grep
+  - an `angular-new-app` override, and `CLAUDE.md` rewritten around `specs/` and the 8 constraints
+  - `SOLUTION.md` cut to 223 words
+- **What changed:** `CLAUDE.md`, `SOLUTION.md`, `specs/tech-stack.md`, `specs/roadmap.md`, `specs/mission.md`, `.claude/skills/lambda-handler/SKILL.md`, `lambda-handler/references/handler-pattern.md`, `risk-engine/SKILL.md`, `risk-engine/references/engine-pattern.md` (`kbPath` exported for the watcher), `angular-signals-component/SKILL.md`, `agent-log/SKILL.md`
+- **Why:** Gaps found by checking each constraint against the brief:
+  - The number grep `[0-9]{2,}` misses `2.2`, `1.5` and `1.2`, the exact multipliers constraint 3 bans (R1 25). The new regex was tested with macOS grep: it flags `2.2` and `15` and passes `0`, `1` and `ES2023`.
+  - Constraint 5 was stated but never checked. Constraint 4 could be broken through `angular-new-app`'s Tailwind step.
+  - The brief names different `SOLUTION.md` parts in constraint 8 (architecture) and in Deliverables (agent skill rationale), so the specs now require the union.
+  - `CLAUDE.md` still referred to a non-existent `PLAN.md` and was missing `riskBandLabel`.
+- **Rejected / corrected:**
+  - The handler reference's placeholder property types (`Detached`, `Semi-detached`, `Terraced`) were rejected as drift from the brief, as flagged in Entry 2.
+  - The agent broke the `angular-signals-component` description on its first edit ("It with signal-based state") and fixed it.
+  - The four-bullet privacy "improvement" was folded into one theme, to match the brief's "one thing".
+  - Operator wording in `tech-stack.md` was brought in line with the skill's `matches` (Entry 7).
+  - Nothing has been compiled or run yet, because there is no code.

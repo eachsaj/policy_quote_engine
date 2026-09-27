@@ -73,7 +73,7 @@ The engine is table-driven. It iterates the factors, evaluates each condition th
 - A public GitHub repository.
 - `README.md`: both services running in under 5 commands total (npm path: 4 commands; Docker path: `docker compose up --build`), and where the KB file lives.
 - `AGENT_LOG.md`: a chronological, honest record of prompt → output → change → why, including rejected output.
-- `SOLUTION.md` (≤ 300 words): KB schema decisions, the reasoning behind the agent skill configuration, and one improvement we'd make with more time.
+- `SOLUTION.md` (≤ 300 words): the union of the brief's constraint 8 and its Deliverables list, which name different parts: architecture decisions, KB schema design decisions, the reasoning behind the agent skill configuration, and **one** thing we'd improve with more time.
 - `risk-kb.json` at the repo root.
 - `CLAUDE.md` and `.claude/skills/` committed, showing how the agent is instructed.
 

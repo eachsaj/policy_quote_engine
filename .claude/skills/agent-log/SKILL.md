@@ -21,7 +21,7 @@ description: Appends an honest, dated entry to AGENT_LOG.md in the PolicyQuote r
 - **Prompt**: the user's words verbatim. If it is a paraphrase, say so.
 - **Output**: what the agent produced, not what it intended to produce.
 - **What changed**: file paths. If nothing changed, write "nothing" and say why.
-- **Why**: the reason the output was kept, tied to a rubric line or `PLAN.md` decision where one applies.
+- **Why**: the reason the output was kept, tied to a rubric line (R1–R6) or a decision in `specs/` where one applies.
 - **Rejected / corrected**: the most valuable field. Name the concrete thing thrown out (a `switch` over operators, a multiplier constant in code, `BehaviorSubject`, `any` on the event, an unsuitable third-party skill) and why. Write "Nothing rejected" only after checking the output against `CLAUDE.md`.
 
 ## Rules
@@ -29,3 +29,4 @@ description: Appends an honest, dated entry to AGENT_LOG.md in the PolicyQuote r
 - Write the entry in the same turn as the work. Never backfill, and never rewrite an earlier entry. Add a correction as a new entry that refers to the old number.
 - One entry per significant prompt. Group trivial follow-ups into the entry they belong to.
 - Don't embellish. If a step was skipped or a test failed, the entry says so.
+- Commit the work with `(log #N)` in the message, so a reviewer can go from the entry to its diff (`specs/roadmap.md` per-phase protocol).

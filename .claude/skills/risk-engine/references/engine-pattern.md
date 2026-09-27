@@ -294,7 +294,7 @@ export class KbValidationError extends Error {
   }
 }
 
-const kbPath = (): string => resolve(process.env.KB_PATH ?? resolve(process.cwd(), '..', 'risk-kb.json'));
+export const kbPath = (): string => resolve(process.env.KB_PATH ?? resolve(process.cwd(), '..', 'risk-kb.json'));
 
 const fieldsOf = (c: Condition, at: string): Array<{ field: string; at: string }> =>
   'field' in c ? [{ field: c.field, at }]
@@ -469,7 +469,7 @@ export const baseKb: Kb = {
 export const kbWith = (patch: Partial<Kb>): LoadedKb => parseKb(JSON.stringify({ ...baseKb, ...patch }), 'test');
 ```
 
-Numbers in test helpers and fixtures are fine: the no-numbers gate covers `src/engine/*.ts` files that ship. Exclude `*.spec.ts` and `test-kb.ts` from that grep (`--exclude='*.spec.ts' --exclude='test-kb.ts'`) if they live in `engine/`.
+Numbers in test helpers and fixtures are fine: the no-numbers gate covers `src/engine/*.ts` files that ship. The gate in the skill's definition of done already excludes `*.spec.ts` and `test-kb.ts`.
 
 Cases to cover, as `test.each` tables where the shape repeats:
 

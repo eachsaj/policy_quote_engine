@@ -20,7 +20,7 @@ Every choice below traces back to one of the six graded areas in the brief. When
 Two independent packages, each started with its own `npm start`. The KB sits at the root as a first-class artifact.
 
 ```
-policyquote_service/
+policy_quote_engine/
 ├── risk-kb.json            # the Knowledge Base (R1)
 ├── docker-compose.yml      # whole app in one command: backend :3000 + frontend :8080
 ├── .dockerignore
@@ -87,14 +87,14 @@ Schema decisions (each one needs an explanation ready for the live review):
 
 ```
 src/engine/
-├── operators.ts   registry: Record<OperatorName, { params: ZodSchema; test: (fieldValue, params) => boolean }>
+├── operators.ts   registry: Record<OperatorName, { params: ZodSchema; matches: (fieldValue, leaf) => boolean }>
 ├── evaluate.ts    evaluate(condition, input): leaf → registry lookup; all/any/not → recursion
 ├── score.ts       scoreRisk(input, kb): enabled factors → matches → points (× occurrences) → total
 ├── band.ts        findBand(score, bands): range lookup over KB bands
 └── template.ts    interpolate(template, values): generic {token} substitution
 ```
 
-- **The operator registry is the only place operators exist.** Each entry pairs a Zod parameter schema with a pure `test` function. The KB loader builds its leaf-condition validation from the registry, so it can reject an unknown operator or wrong parameters. Adding an operator takes one registry entry, and nothing else changes.
+- **The operator registry is the only place operators exist.** Each entry pairs a Zod parameter schema with a pure `matches` function (built by `defineOperator`, which keeps the registry homogeneous without `any`). The KB loader builds its leaf-condition validation from the registry, so it can reject an unknown operator or wrong parameters. Adding an operator takes one registry entry, and nothing else changes.
 - The starting operators are `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `between`, `outside_range`, `in` and `starts_with`. `starts_with` accepts a list of prefixes, for postcode factors like flood zones.
 - **There is no `switch`, no if/else ladder over operators or factor ids, and no field names or numbers in `engine/`.** An ESLint rule and a grep gate enforce this.
 - Group nodes are told apart by key presence, through a discriminating type guard. The evaluator recurses through them.
@@ -194,8 +194,10 @@ Each signal primitive has a deliberate use that can be explained to the panel.
 | Gate | Command | Blocks |
 |---|---|---|
 | Types | `npx tsc --noEmit` (both packages) | Type errors |
-| Lint | `npm run lint`: `@typescript-eslint/no-explicit-any: error`, and `no-restricted-syntax` banning `SwitchStatement` in `engine/` and `handler.ts` | `any`, `switch` |
-| No hardcoded scoring | `grep -nE '[0-9]{2,}' backend/src/engine` must match nothing except comments | Numbers in the engine |
+| Lint | `npm run lint`: `@typescript-eslint/no-explicit-any: error`, `no-restricted-syntax` banning `SwitchStatement` in `engine/` and `handler.ts`, and `no-magic-numbers` (ignoring `0` and `1`) in `engine/` | `any`, `switch`, scoring literals |
+| No hardcoded scoring | `grep -rnE '\b[0-9]+\.[0-9]+\b\|\b([2-9]\|[1-9][0-9]+)\b' backend/src/engine` (excluding specs) must match nothing except comments. It catches `2.2`, `1.5`, `15` and `999`; a `[0-9]{2,}` pattern would miss the multipliers | Numbers in the engine |
+| No external calls | `grep -rnE 'fetch\(\|https?\.request\|axios\|openai\|anthropic' backend/src` must match nothing | LLM or API calls (constraint 5) |
+| No UI libraries | `grep -nE 'material\|primeng\|bootstrap\|tailwind' frontend/package.json` must match nothing | Constraint 4 |
 | Tests | `npm test` (both packages) | Regressions |
 
 Naming: files in kebab-case, types in PascalCase, and KB `id`s in snake_case. Names are domain terms from the brief (`riskBand`, `appliedFactors`, `coverageLoadFactor`).
@@ -206,13 +208,13 @@ Naming: files in kebab-case, types in PascalCase, and KB `id`s in snake_case. Na
 
 | Skill | Scope | Status |
 |---|---|---|
-| `lambda-handler` | `handler.ts`, `server.ts`, request schema, error envelope, `backend/Dockerfile` | Exists. Needs corrections: property types House/Flat/Bungalow, and the Dockerfile section updated to the Containers spec (non-root, `HEALTHCHECK`, KB mounted by compose) |
+| `lambda-handler` | `handler.ts`, `server.ts` (incl. KB hot reload), six-field request schema, error envelope, `backend/Dockerfile` | Exists (`.claude/skills/lambda-handler`) |
 | `risk-engine` | `engine/*`, `kb/*`, operator registry, `quote/service.ts` | Exists (`.claude/skills/risk-engine`) |
 | `kb-factor` | **Live-demo skill.** Adds, changes or removes a factor through the KB only. It adds a scenario fixture and runs the tests, then the curl check, and escalates only when a new operator is truly needed | Exists (`.claude/skills/kb-factor`) |
 | `kb-driven-tests` | JSON scenario fixtures and `test.each` suites under `backend/test/`, configurability proof, factor and band coverage check | Exists (`.claude/skills/kb-driven-tests`) |
 | `angular-signals-component` | Signal state, `input()`, `computed()`/`effect()` rules, no Subjects | Exists (`.claude/skills/angular-signals-component`) |
 | `agent-log` | AGENT_LOG entries: verbatim prompt, output, change, why, rejections | Exists |
-| `angular-developer`, `angular-new-app` | Upstream Angular guidance and scaffolding | Exist |
+| `angular-developer`, `angular-new-app` | Upstream Angular guidance and scaffolding | Exist. Where they conflict with the brief (Signal Forms, `httpResource`, Tailwind, global CLI install), `angular-signals-component` and `CLAUDE.md` override them |
 
 **Traceability.** Each phase's commit message cites its AGENT_LOG entry number, so a reviewer can go from a log entry to its diff.
 
