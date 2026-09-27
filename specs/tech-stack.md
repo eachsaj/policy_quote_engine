@@ -139,8 +139,8 @@ src/
 | `customerName` | trimmed string, 1–100 chars | Required by the brief's form. **Not a scoring input**: no KB factor reads it, and it is never logged |
 | `age` | integer, 18–120 | |
 | `propertyType` | `enum(['House', 'Flat', 'Bungalow'])` | Exactly the brief's options |
-| `propertyValue` | positive number (€) | |
-| `postcode` | Irish Eircode regex, trimmed and **upper-cased** | Normalised, so KB `starts_with ["T12","N37"]` matches "t12 x70a" |
+| `propertyValue` | positive number (£ or €, following the postcode; no conversion) | |
+| `postcode` | UK postcode or Irish Eircode (`quote/market.ts`), trimmed and **upper-cased**; the format picks the currency (GBP/EUR) | Normalised, so KB `starts_with ["EX","PL"]` matches "ex4 4qj" and `["T12"]` matches "t12 x70a" |
 | `previousClaims` | integer, 0–20 | "in the last 5 years" (the form label says so) |
 
 **Loading the KB correctly (R4).** The loader runs these checks, and each failure produces a message naming the offending path:

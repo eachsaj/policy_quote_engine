@@ -1,13 +1,14 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { Title } from '@angular/platform-browser';
 import type { QuoteResponse } from '../models/quote';
 import { QuotePageComponent } from './quote-page.component';
 
 const validForm = { customerName: 'A Customer', age: 40, propertyType: 'House' as const, propertyValue: 250000, postcode: 'd02 x285', previousClaims: 0 };
 
 const mockResponse: QuoteResponse = {
-  monthlyPremium: 45, annualPremium: 540, riskBand: 'ELEVATED', riskBandLabel: 'ELEVATED', riskScore: 30,
+  monthlyPremium: 45, annualPremium: 540, currency: 'EUR', riskBand: 'ELEVATED', riskBandLabel: 'ELEVATED', riskScore: 30,
   riskSummary: 'Elevated risk profile.', kbVersion: '1.0.0',
   coverageDetails: { basePremium: 300, riskMultiplier: 1.5, coverageLoadFactor: 1.2, sumInsured: 250000, items: [] },
   appliedFactors: [{ id: 'previous_claims_low', description: '1–2 previous claims', points: 30, occurrences: 2 }],
@@ -51,7 +52,7 @@ describe('QuotePageComponent signal state', () => {
     await fixture.whenStable();
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelector('.result')?.textContent).toContain('ELEVATED');
-    expect(el.querySelector('[aria-live]')?.textContent).toContain('Quote ready: ELEVATED');
+    expect(el.querySelector('[aria-live]')?.textContent).toContain('Quote ready: ELEVATED, 45.00 euro a month.');
   });
 
   it('disables the button while a quote is in flight, so it cannot be submitted twice', async () => {
@@ -90,6 +91,37 @@ describe('QuotePageComponent signal state', () => {
     page.submit();
     http.expectOne('/policy/quote').error(new ProgressEvent('error'), { status: 0 });
     expect(page.errorMessage()).toContain("couldn't reach the quote service");
+  });
+
+  it('shows the property value in the currency of the postcode being typed (computed)', async () => {
+    const fixture = TestBed.createComponent(QuotePageComponent);
+    const symbol = () => (fixture.nativeElement as HTMLElement).querySelector('.affix-symbol')?.textContent?.trim();
+    const typePostcode = async (value: string) => {
+      fixture.componentInstance.form.controls.postcode.setValue(value);
+      await fixture.whenStable();
+    };
+    await fixture.whenStable();
+    expect(symbol()).toBe('£/€');   // nothing typed yet
+    await typePostcode('sw1a 1aa');
+    expect(symbol()).toBe('£');
+    await typePostcode('D02 X285');
+    expect(symbol()).toBe('€');
+    await typePostcode('D02');     // not a full postcode yet
+    expect(symbol()).toBe('£/€');
+  });
+
+  it('puts the current quote in the browser tab title, and resets it after an error (effect)', async () => {
+    const fixture = create();
+    const title = TestBed.inject(Title);
+    fixture.componentInstance.submit();
+    http.expectOne('/policy/quote').flush({ ...mockResponse, currency: 'GBP' });
+    await fixture.whenStable();
+    expect(title.getTitle()).toBe('£45.00 a month, ELEVATED · PolicyQuote');
+
+    fixture.componentInstance.submit();
+    http.expectOne('/policy/quote').flush({ error: 'Quote engine unavailable' }, { status: 500, statusText: 'Server Error' });
+    await fixture.whenStable();
+    expect(title.getTitle()).toBe('PolicyQuote');
   });
 
   it('does not post an invalid form, and shows inline errors', async () => {

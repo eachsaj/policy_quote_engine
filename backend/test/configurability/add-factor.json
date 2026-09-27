@@ -1,11 +1,11 @@
 {
-  "name": "adding a flood-zone factor changes the quote with no code change",
-  "request": { "postcode": "t12 x70a" },
+  "name": "adding the brief's flood-zone factor (EX or PL, +15) changes the quote with no code change",
+  "request": { "postcode": "ex4 4qj" },
   "patch": [
-    { "op": "addFactor", "factor": { "id": "flood_zone", "description": "Property in a flood-risk Eircode routing area",
-      "condition": { "field": "postcode", "operator": "starts_with", "values": ["T12", "N37"] }, "points": 15 } }
+    { "op": "addFactor", "factor": { "id": "flood_zone", "description": "Flood zone postcode",
+      "condition": { "field": "postcode", "operator": "starts_with", "values": ["EX", "PL"] }, "points": 15 } }
   ],
   "before": { "riskScore": 0, "riskBand": "STANDARD", "appliedFactorIds": [] },
-  "after": { "riskScore": 15, "riskBand": "STANDARD", "appliedFactorIds": ["flood_zone"] },
-  "why": "base scores 0; the request upper-cases t12 x70a to T12 X70A, which starts with T12 → +15"
+  "after": { "riskScore": 15, "riskBand": "STANDARD", "appliedFactorIds": ["flood_zone"], "currency": "GBP" },
+  "why": "the brief's live-review example, verbatim; base scores 0; the request upper-cases ex4 4qj to EX4 4QJ (Exeter), which starts with EX → +15"
 }

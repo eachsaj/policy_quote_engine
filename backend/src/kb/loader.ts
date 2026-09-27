@@ -5,7 +5,7 @@ import { templateTokens } from '../engine/template';
 import { quoteRequestSchema, unscoredFields } from '../quote/request';
 import { summaryTokens } from '../quote/summary-tokens';
 import { kbSchema } from './schema';
-import type { Condition, Kb, LoadedKb, OrderedBand } from './types';
+import type { Condition, Factor, Kb, LoadedKb, OrderedBand } from './types';
 
 /** KB shapes this code understands. A breaking KB shape bumps `schemaVersion` and is rejected until code supports it. */
 export const supportedSchemaVersions: readonly number[] = [1];
@@ -58,20 +58,24 @@ const bandProblems = (ordered: readonly OrderedBand[]): string[] => {
   ];
 };
 
+/** perOccurrence multiplies points by the field's value, so that field must be numeric. */
+const perOccurrenceProblem = (f: Factor, i: number): string[] => {
+  if (!f.perOccurrence || !('field' in f.condition)) return [];
+  const { field } = f.condition;
+  if (!isRequestField(field)) return []; // already reported as an unknown field
+  return requestShape[field] instanceof z.ZodNumber ? [] : [`factors[${i}].perOccurrence: field "${field}" is not numeric`];
+};
+
+/** Every condition must read a request field that is actually scored. */
 const fieldProblems = (kb: Kb): string[] =>
-  kb.factors.flatMap((f, i) => [
-    ...leavesOf(f.condition, `factors[${i}].condition`)
-      .filter(({ field }) => !isRequestField(field))
-      .map(({ field, at }) => `${at}.field: "${field}" is not a quote request field`),
-    ...leavesOf(f.condition, `factors[${i}].condition`)
-      .filter(({ field }) => unscoredFields.has(field))
-      .map(({ field, at }) => `${at}.field: "${field}" is collected but never scored`),
-    // perOccurrence multiplies points by the field's value, so that field must be numeric.
-    ...('field' in f.condition && f.perOccurrence && isRequestField(f.condition.field) &&
-    !(requestShape[f.condition.field] instanceof z.ZodNumber)
-      ? [`factors[${i}].perOccurrence: field "${f.condition.field}" is not numeric`]
-      : []),
-  ]);
+  kb.factors.flatMap((f, i) => {
+    const leaves = leavesOf(f.condition, `factors[${i}].condition`);
+    const unknown = leaves.filter(({ field }) => !isRequestField(field))
+      .map(({ field, at }) => `${at}.field: "${field}" is not a quote request field`);
+    const unscored = leaves.filter(({ field }) => unscoredFields.has(field))
+      .map(({ field, at }) => `${at}.field: "${field}" is collected but never scored`);
+    return [...unknown, ...unscored, ...perOccurrenceProblem(f, i)];
+  });
 
 /**
  * Parses and validates KB text. Checks, each reported with the offending JSON path:

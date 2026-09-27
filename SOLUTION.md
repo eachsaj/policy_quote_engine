@@ -10,9 +10,10 @@
 ## KB design choices
 
 - **`risk-kb.json` extends the brief's example, never reshapes it**, and holds every number.
-- **Generic evaluator.** Conditions are leaves or nested `all` / `any` / `not` groups; operators live in a registry. "Flat AND > €500k" is a JSON edit.
+- **Generic evaluator.** Conditions are leaves or nested `all` / `any` / `not` groups; operators live in a registry. "Flat AND > £500k" is a JSON edit.
 - **Validated, hot-reloaded.** Six load checks name the bad JSON path. Edits go live without a restart; an invalid edit leaves the last good KB serving.
 - **Versioned.** Quotes return `kbVersion`; an unsupported `schemaVersion` is rejected, so a breaking KB never mis-scores.
+- **UK and Ireland.** A UK postcode or Eircode picks £ or €; the brief's wording stays verbatim, with € wording as an additive key.
 - **Tests are data.** Hand-worked JSON scenarios; a coverage check fails when a factor lacks one.
 
 ## Agent configuration
@@ -21,4 +22,4 @@
 
 ## One improvement: data minimisation
 
-The name never reaches the scorer, but it still crosses the API. Next: keep it client-side, score Eircodes by routing key, redact logs and add GDPR retention and consent notices.
+The name never reaches the scorer, but it still crosses the API. Next: keep it client-side, score postcodes by area, redact logs and add GDPR retention and consent notices.

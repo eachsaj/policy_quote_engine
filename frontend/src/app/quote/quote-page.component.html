@@ -43,13 +43,13 @@
     <div class="field">
       <label for="propertyValue">{{ labels.propertyValue }}</label>
       <div class="affix">
-        <span class="affix-symbol" aria-hidden="true">€</span>
+        <span class="affix-symbol" aria-hidden="true">{{ valueSymbol() }}</span>
         <input id="propertyValue" type="number" inputmode="decimal" min="1" step="1000" formControlName="propertyValue"
                [attr.aria-invalid]="showError('propertyValue')"
                [attr.aria-describedby]="showError('propertyValue') ? 'propertyValue-error' : null" />
       </div>
       @if (showError('propertyValue')) {
-        <p id="propertyValue-error" class="field-error">Enter the property value in euro, more than €0.</p>
+        <p id="propertyValue-error" class="field-error">Enter the property value, more than 0.</p>
       }
     </div>
 
@@ -59,7 +59,7 @@
              [attr.aria-invalid]="showError('postcode')"
              [attr.aria-describedby]="showError('postcode') ? 'postcode-error' : null" />
       @if (showError('postcode')) {
-        <p id="postcode-error" class="field-error">Enter a valid Eircode, for example D02 X285.</p>
+        <p id="postcode-error" class="field-error">Enter a UK postcode (for example SW1A 1AA) or an Eircode (for example D02 X285).</p>
       }
     </div>
 

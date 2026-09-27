@@ -47,7 +47,7 @@ export const quoteRequestSchema = z.object({
   age: z.number().int().min(18).max(120),
   propertyType: z.enum(propertyTypes),
   propertyValue: z.number().positive(),
-  postcode: z.string().trim().regex(eircode, 'Must be a valid Eircode').transform((p) => p.toUpperCase()),
+  postcode: z.string().trim().refine(isKnownPostcode, 'Must be a valid UK postcode or Eircode').transform((p) => p.toUpperCase()), // quote/market.ts
   previousClaims: z.number().int().min(0).max(20), // in the last 5 years
 });
 

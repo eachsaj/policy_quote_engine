@@ -43,6 +43,7 @@ It is the skill used in the live review (R6 10) and the proof for R1 (25), so it
 | "under 25", "younger than 25" | `lt 25` | "25 and under" means `lte` |
 | "between 1 and 2 claims" | `between min 1 max 2` | `between` is inclusive at both ends |
 | "under 21 or over 70" | `outside_range min 21 max 70` | exclusive: 21 and 70 don't match |
+| "postcode starts with EX or PL" (UK) | `starts_with values ["EX","PL"]` | give the whole area letters: `"E"` alone also matches EC, EN and EX. Mixing UK and Eircode prefixes in one factor is fine, since the formats never overlap |
 | "Eircode in T12 or N37" | `starts_with values ["T12","N37"]` | routing keys are always 3 characters, so give the whole key: a partial `"D0"` spans D01–D08, and `"D6"` also matches `D6W`. Grouping by county needs an area-aware operator, so escalate |
 | "flats or bungalows" | `in values ["Flat","Bungalow"]` | values must be the request enum's spelling exactly (`House` / `Flat` / `Bungalow`) |
 | "Flat AND over €500k" | `all: [eq Flat, gt 500000]` | two fields means a group, not two factors |

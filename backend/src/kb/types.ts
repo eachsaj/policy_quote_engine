@@ -1,6 +1,7 @@
 // Generated from risk-kb.json (see AGENT_LOG). The brief's example keys are kept verbatim;
 // `// +` marks our additions. These interfaces are the source of truth: kb/schema.ts is checked against them.
 import type { OperatorName } from '../engine/operators';
+import type { Currency } from '../quote/market';
 
 /**
  * A single-field test. Operator params sit flat on the leaf, exactly as in the brief:
@@ -19,7 +20,9 @@ export type Condition = LeafCondition | AllCondition | AnyCondition | NotConditi
 
 export interface Factor {
   readonly id: string;
-  readonly description: string; // customer-facing, shown verbatim in the UI
+  readonly description: string; // customer-facing, shown verbatim in the UI; the brief's wording, used for GBP
+  /** + Wording for another currency's market, e.g. `{ "EUR": "Property value over €750,000" }`. Falls back to `description`. */
+  readonly descriptions?: Readonly<Partial<Record<Currency, string>>>;
   readonly condition: Condition;
   readonly points: number;
   /** Awards points × the value of the condition's field (e.g. 2 claims × 15). Leaf conditions only. */

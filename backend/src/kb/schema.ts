@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { operatorNames, operators } from '../engine/operators';
+import { currencies } from '../quote/market';
 import type { Condition, Kb } from './types';
 
 /**
@@ -52,6 +53,7 @@ const factorSchema = z
   .object({
     id: z.string().regex(/^[a-z][a-z0-9_]*$/, 'id must be snake_case'),
     description: z.string().min(1),
+    descriptions: z.partialRecord(z.enum(currencies), z.string().min(1)).optional(),
     condition: conditionSchema,
     points: z.number().int(),
     perOccurrence: z.boolean().optional(),
