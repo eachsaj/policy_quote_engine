@@ -204,6 +204,8 @@ Every phase follows the same loop, so the log shows intentional engineering:
 
 Each line of the brief maps to the phase that delivers it and the check that proves it.
 
+**Phase 8 audit:** every row below was re-checked against the running app, the code and a fresh clone from GitHub, and is ✅. Phases 0–7 are on the public repo's default branch `main` (PRs #1–#4); Phase 8 follows the same way.
+
 | Brief requirement | Phase | Proof |
 |---|---|---|
 | **AI agent usage** | | |
