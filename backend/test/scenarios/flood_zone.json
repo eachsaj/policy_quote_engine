@@ -1,0 +1,44 @@
+[
+  {
+    "name": "a House in D01: routing key matches",
+    "request": { "postcode": "D01 F5P2" },
+    "expect": { "riskScore": 15, "riskBand": "STANDARD", "appliedFactorIds": ["flood_zone"], "annualPremium": 360, "monthlyPremium": 30 },
+    "why": "D01 starts_with D01 → +15; 15 → STANDARD (0–25); 300 × 1.0 × 1.2 = 360; / 12 = 30"
+  },
+  {
+    "name": "a House in D03: second routing key matches",
+    "request": { "postcode": "D03 R6X9" },
+    "expect": { "riskScore": 15, "riskBand": "STANDARD", "appliedFactorIds": ["flood_zone"] },
+    "why": "D03 starts_with D03 → +15 → STANDARD"
+  },
+  {
+    "name": "a House in D13, typed in lower case: third routing key matches",
+    "request": { "postcode": "d13 v2x4" },
+    "expect": { "riskScore": 15, "riskBand": "STANDARD", "appliedFactorIds": ["flood_zone"] },
+    "why": "the request schema upper-cases the Eircode to D13 V2X4; starts_with D13 → +15 → STANDARD"
+  },
+  {
+    "name": "a House in D02: the neighbouring routing key does not match",
+    "request": { "postcode": "D02 X285" },
+    "expect": { "riskScore": 0, "riskBand": "STANDARD", "appliedFactorIds": [] },
+    "why": "D02 is none of D01, D03, D13 → 0 → STANDARD"
+  },
+  {
+    "name": "a House in D10: shares the D1 prefix but not the routing key",
+    "request": { "postcode": "D10 K2C4" },
+    "expect": { "riskScore": 0, "riskBand": "STANDARD", "appliedFactorIds": [] },
+    "why": "D10 does not start with D13 (or D01, D03), so the full 3-character key keeps D10 out → 0 → STANDARD"
+  },
+  {
+    "name": "a Flat in D01: stacks to the top of STANDARD",
+    "request": { "propertyType": "Flat", "postcode": "D01 F5P2" },
+    "expect": { "riskScore": 25, "riskBand": "STANDARD", "appliedFactorIds": ["property_type_flat", "flood_zone"], "annualPremium": 360 },
+    "why": "Flat +10, D01 +15 → 25, the STANDARD max (0–25); 300 × 1.0 × 1.2 = 360"
+  },
+  {
+    "name": "a Flat in D03 with 1 claim: flood pushes it into ELEVATED",
+    "request": { "propertyType": "Flat", "postcode": "D03 R6X9", "previousClaims": 1 },
+    "expect": { "riskScore": 40, "riskBand": "ELEVATED", "appliedFactorIds": ["previous_claims_low", "property_type_flat", "flood_zone"], "annualPremium": 540, "monthlyPremium": 45 },
+    "why": "1 claim × 15 = 15, Flat +10, D03 +15 → 40 → ELEVATED (26–60); 300 × 1.5 × 1.2 = 540; / 12 = 45"
+  }
+]

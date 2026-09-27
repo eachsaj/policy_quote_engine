@@ -546,3 +546,38 @@ Chronological record of significant agent interactions while building PolicyQuot
   - `backend/test/configurability/_baseline-kb.json` was **left with £**, on purpose: it is the frozen v1.0.0 snapshot of the brief's KB, and its text is not asserted anywhere.
   - The review-prep and `kb-factor` note about one-letter UK postcode areas over-matching ("B" → BA/BS) was rewritten for Eircode: routing keys are a fixed 3 characters, so the risk is a partial key such as "D0" spanning D01–D08.
   - `AGENT_LOG.md` history entries keep their UK examples and are not rewritten.
+
+## Entry 28: README: how to modify the KB, with and without the kb-factor skill
+
+- **When:** 2026-09-27 19:57
+- **Phase / skill:** Post-Phase 8 docs / `kb-factor` (source of the workflow), `run` (live check before writing)
+- **Prompt:** "include this information in README and explain how to modify the knowledge" (after "how to change the knowledge using skill", which the agent answered from `.claude/skills/kb-factor/SKILL.md`).
+- **Output:** README's three-step "Adding a factor" section replaced by "Modifying the Knowledge Base". It has two subsections: "With the `kb-factor` skill" (example prompts, what the skill does, a table of add, change, disable, remove and combine, and when it hands over to `risk-engine` or `lambda-handler`) and "By hand" (edit, version bump, fixtures, verify, and last-good-KB behaviour).
+- **What changed:** `README.md`, `AGENT_LOG.md`
+- **Why:** Reviewers and the live demo (R6) need to know that a rule change is KB-only (R1 KB design 25) and how the project skill drives it (R3/R5 agent workflow). The old section covered adding a factor by hand only.
+- **Rejected / corrected:**
+  - The `starts_with` example was checked against `engine/operators.ts` before it was kept: the parameter is `values`, not `value`.
+  - The operator list was not copied into the new section, because the README's KB section above already lists it. The new text refers to it instead, so the two can't drift apart.
+  - Earlier in the session, the first programmatic click on "Get quote" in Chrome showed no result and a second click did. This is noted but not investigated, and no code was changed.
+
+## Entry 29: KB 1.2.0: flood_zone factor for Eircodes D01, D03, D13
+
+- **When:** 2026-09-27 20:09
+- **Phase / skill:** Post-Phase 8 KB change / `kb-factor` (fixture per `kb-driven-tests`)
+- **Prompt:** "/kb-factor add a flood zone factor for Eircodes in routing areas D01,D03,D13". The rule gave no points, so the agent restated it and asked. Answer: "+15 (Recommended)".
+- **Output:** New factor `{ "id": "flood_zone", "description": "Property in a flood-risk Eircode routing area", "condition": { "field": "postcode", "operator": "starts_with", "values": ["D01", "D03", "D13"] }, "points": 15 }`, KB 1.1.1 → 1.2.0. Fixture `backend/test/scenarios/flood_zone.json` (7 cases, generated from the KB: each key as a trigger, lower-case input, neighbour D02, near prefix D10, Flat + D01 = 25 at the STANDARD boundary, Flat + D03 + 1 claim = 40 ELEVATED). Sample `backend/requests/flood-zone.json` moved from T12 X70A to D01 F5P2.
+- **What changed:** `risk-kb.json`, `backend/test/scenarios/flood_zone.json` (new), `backend/requests/flood-zone.json`, `AGENT_LOG.md`. Nothing under `src/`.
+- **Why:**
+  - A new factor as a KB-only change is the R1 (KB design 25) claim, and this is the live-demo path (R6).
+  - Full 3-character routing keys, so D01 cannot match D10–D18. The D10 case proves it.
+  - No existing fixture or sample uses D01, D03 or D13, so no expected value moved.
+  - Verified:
+    - `loadKb()` → KB ok 1.2.0.
+    - Jest 162/162 (was 154; +7 scenarios, +1 coverage).
+    - Running backend hot-reloaded without a restart: `/health` shows 1.2.0 with 7 factors, the flood-zone sample gives 15 STANDARD €30 with `flood_zone` applied, and the other four samples are unchanged (10, 30, 120, 45).
+    - UI: House, D03 R6X9, 1 claim → 30 ELEVATED €45 with "Property in a flood-risk Eircode routing area +15" and "Rules version 1.2.0".
+- **Rejected / corrected:**
+  - Guessing the points was rejected. The skill says to ask, so the user chose +15.
+  - The factor edit and the version bump were saved as two separate edits. The server log shows a reload at `kbVersion 1.1.1` with 7 factors before the 1.2.0 one, so for about a second the new rule was served under the old version, and a quote in that window would have been mislabelled. For the live demo, the factor and the version bump go in one save.
+  - In the UI check, the form still held values edited since the last run, and property type stayed House. The agent reported the House result (30 ELEVATED) instead of claiming the Flat fixture case (40).
+  - The other T12/N37 examples in specs, skills, README and the configurability proof (frozen baseline KB) were left as generic examples on purpose.
