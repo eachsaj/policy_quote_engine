@@ -277,3 +277,59 @@ Chronological record of significant agent interactions while building PolicyQuot
   - Three details of the pattern were changed. Its 404 body echoed the caller's method and path; it is now a fixed `"Not found"`, so no input is reflected. An issue with an empty path now reports `(body)` instead of `""`. `server.ts` now catches the startup error and prints only the loader's message with exit code 1, instead of an uncaught stack trace.
   - The agent's first background `npm start` failed: it ran in the repo root, with no `package.json`, because the `cd` didn't carry over. It was rerun as `npm --prefix backend start`, the form the README will use.
   - Nothing from the reject table appeared in the first draft.
+
+## Entry 17: Generated from backend contract: frontend models/quote.ts
+
+- **When:** 2026-09-27 18:35
+- **Phase / skill:** Phase 4 / `angular-signals-component` (roadmap "Generate from the backend contract")
+- **Prompt:** "start phase 4" (the model is the roadmap's Phase 4 "generated from the backend contract" step)
+- **Output:** `frontend/src/app/models/quote.ts`, derived field by field from:
+  - `backend/src/quote/request.ts` (the Zod schema and the `propertyTypes` enum)
+  - `quote/response.ts` and `engine/score.ts` (`AppliedFactor`)
+  - `handler.ts` (the 400/404/500 error bodies)
+
+  The form validators in `quote/quote-form.ts` mirror the Zod rules one to one, and `quote-form.spec.ts` has a row per rule.
+- **What changed:** `frontend/src/app/models/quote.ts`, `frontend/src/app/quote/quote-form.ts` (new)
+- **Why:** The brief asks for code generated from the source of truth, not boilerplate (R2). The frontend has no shared types package (tech-stack decision), so this derivation, together with the validator spec, is how drift is caught. `riskBand` stays a `string`, not a union, so a new KB band needs no frontend change (R1).
+- **Rejected / corrected:** The drift was between the skill's own reference and the real backend; the backend won in each case, and a test pins each one:
+  - Response types are `readonly`; the reference's were mutable.
+  - `propertyValue` used `Validators.min(1)`, but Zod `positive()` accepts anything above 0 (e.g. £0.50). There is now a `positive` validator.
+  - `customerName` used `Validators.required`, which accepts `"   "`, but Zod trims before `min(1)`. There is now a `notBlank` validator.
+  - Whole numbers used `Validators.pattern(/^\d+$/)` on number controls, which relies on string coercion. There is now an `integer` validator, matching `.int()`.
+  - The reference's `ReadonlyArray<…>` was changed to `readonly …[]` for lint.
+
+## Entry 18: Phase 4: Angular scaffold, reactive form and signal state
+
+- **When:** 2026-09-27 18:35
+- **Phase / skill:** Phase 4 / `angular-signals-component` (with `angular-new-app`'s steps, overridden where the brief differs), then `claude-in-chrome` for the browser check
+- **Prompt:** "start phase 4"
+- **Output:**
+  - `frontend/` scaffolded with `npx @angular/cli@latest new` (Angular 22.2, TypeScript 6.0, Vitest 5): `--style=css --ssr=false --zoneless --ai-config=none`, `@angular/router` removed, `angular-eslint` added
+  - `proxy.conf.json`, wired into `angular.json` serve options
+  - `QuoteService` (HttpClient → Observable)
+  - `QuotePageComponent`: exactly three writable signals (`loading`, `quoteResult`, `errorMessage`); `canSubmit` and `announcement` as `computed()` over `toSignal(statusChanges)`; one `effect()` that only moves focus via `afterNextRender`; one `takeUntilDestroyed` subscription per submit; narrowed error bodies
+  - Six labelled fields with `aria-invalid` and `aria-describedby` errors
+  - Hand-written CSS tokens with dark mode
+  - Specs: app, form (a row per Zod rule) and page signal transitions with `HttpTestingController`
+
+  Results: `ng build` OK (65.8 kB transferred); `ng test` 3 files, 26/26 passed; `ng lint` passes; the Subject/any/NgModule/@Input, effect-write, missing-OnPush, UI-library and zone.js greps print nothing.
+
+  In Chrome against the running backend:
+  - Age 12 shows an inline error with the button disabled.
+  - The three samples render 10/STANDARD/£30/£360, 30/ELEVATED/£45/£540 and 85/HIGH RISK/£66/£792.
+  - During each submit the button is disabled, `aria-busy="true"` and "Getting your quote…"; focus then moves to `#result-heading` and the `aria-live` region announces the band and premium.
+  - With the backend stopped, the proxy's 502 shows "We couldn't get a quote right now", clears the old result and re-enables the button.
+- **What changed:** `frontend/` (new); `CLAUDE.md` (status)
+- **Why:**
+  - R3 20: each signal primitive has one job.
+  - Constraints 1, 4 and 6: no Subjects (enforced by a lint rule), own CSS, and `npm start` serves the app with the proxy.
+  - The results panel is deliberately minimal (label, premiums, summary); Phase 5 moves it into `QuoteResultComponent` with the badge and factor rows.
+- **Rejected / corrected:**
+  - `angular-new-app`'s defaults were overridden: no global CLI install, no Tailwind, and `--ai-config=none` rather than "prefer agents", which would have written a second agent config into `frontend/`.
+  - The scaffold's `tsconfig.json` had no `strict: true` and no `strictTemplates`; both were added.
+  - The agent's first form spec used `setValue(value as never)`, a cast on form values that the skill's reject table forbids. It was rewritten with a typed setter per row. A leftover `as HTMLElement` in the page spec became `querySelector<HTMLButtonElement>`.
+  - Lint flagged `ReadonlyArray<T>`, which was fixed.
+  - A lint probe showed `prefer-on-push-component-change-detection` did not fire on a component without `changeDetection` under Angular 22 (cause not investigated). The OnPush grep gate still catches it, and every component sets OnPush explicitly.
+  - Node 25 is outside the Angular CLI's supported range (`^22 || ^24 || >=26`) and produced warnings only. The README should recommend Node 22 or 24 LTS.
+  - A browser-check script hung because it awaited `requestAnimationFrame` in a background tab; it was replaced with timer waits.
+  - A backend 400 can't be triggered from the UI, because the validators block exactly what Zod rejects. That path is covered by the unit test, not the browser.

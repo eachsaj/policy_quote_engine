@@ -1,0 +1,80 @@
+/* Hand-written design tokens and base styles. No UI libraries (brief constraint 4). */
+:root {
+  color-scheme: light dark;
+
+  --bg: #f4f5f8;
+  --surface: #ffffff;
+  --text: #1b1d24;
+  --text-muted: #555a66;
+  --border: #dde0e7;
+  --border-strong: #9aa0ad;
+  --accent: #3b3fb6;
+  --accent-strong: #2c2f94;
+  --on-accent: #ffffff;
+  --focus: #8c90ff;
+  --danger: #b3261e;
+  --danger-bg: #fdecea;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.9rem;
+  --shadow: 0 1px 2px rgb(20 22 40 / 0.06), 0 6px 20px rgb(20 22 40 / 0.06);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2.5rem;
+  --space-8: 4rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121319;
+    --surface: #1c1e27;
+    --text: #eceef4;
+    --text-muted: #a4a9b6;
+    --border: #2e313d;
+    --border-strong: #5b6070;
+    --accent: #8c90ff;
+    --accent-strong: #a8abff;
+    --on-accent: #10112a;
+    --focus: #c3c5ff;
+    --danger: #ff8a80;
+    --danger-bg: #3a1c1b;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  padding: var(--space-5);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

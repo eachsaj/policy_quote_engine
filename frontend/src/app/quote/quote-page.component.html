@@ -1,0 +1,98 @@
+<main class="page">
+  <header class="page-header">
+    <h1>Home insurance quote</h1>
+    <p class="lede">Tell us about you and your home to get an instant premium estimate.</p>
+  </header>
+
+  <form class="card quote-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="field">
+      <label for="customerName">{{ labels.customerName }}</label>
+      <input id="customerName" type="text" autocomplete="name" formControlName="customerName"
+             [attr.aria-invalid]="showError('customerName')"
+             [attr.aria-describedby]="showError('customerName') ? 'customerName-error' : null" />
+      @if (showError('customerName')) {
+        <p id="customerName-error" class="field-error">Enter your name (up to 100 characters).</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="age">{{ labels.age }}</label>
+      <input id="age" type="number" inputmode="numeric" min="18" max="120" step="1" formControlName="age"
+             [attr.aria-invalid]="showError('age')"
+             [attr.aria-describedby]="showError('age') ? 'age-error' : null" />
+      @if (showError('age')) {
+        <p id="age-error" class="field-error">Enter a whole number from 18 to 120.</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="propertyType">{{ labels.propertyType }}</label>
+      <select id="propertyType" formControlName="propertyType"
+              [attr.aria-invalid]="showError('propertyType')"
+              [attr.aria-describedby]="showError('propertyType') ? 'propertyType-error' : null">
+        <option [ngValue]="null" disabled>Choose…</option>
+        @for (t of propertyTypes; track t) {
+          <option [ngValue]="t">{{ t }}</option>
+        }
+      </select>
+      @if (showError('propertyType')) {
+        <p id="propertyType-error" class="field-error">Choose a property type.</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="propertyValue">{{ labels.propertyValue }}</label>
+      <div class="affix">
+        <span class="affix-symbol" aria-hidden="true">£</span>
+        <input id="propertyValue" type="number" inputmode="decimal" min="1" step="1000" formControlName="propertyValue"
+               [attr.aria-invalid]="showError('propertyValue')"
+               [attr.aria-describedby]="showError('propertyValue') ? 'propertyValue-error' : null" />
+      </div>
+      @if (showError('propertyValue')) {
+        <p id="propertyValue-error" class="field-error">Enter the property value in pounds, more than £0.</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="postcode">{{ labels.postcode }}</label>
+      <input id="postcode" type="text" autocomplete="postal-code" autocapitalize="characters" formControlName="postcode"
+             [attr.aria-invalid]="showError('postcode')"
+             [attr.aria-describedby]="showError('postcode') ? 'postcode-error' : null" />
+      @if (showError('postcode')) {
+        <p id="postcode-error" class="field-error">Enter a valid UK postcode, for example SW1A 1AA.</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="previousClaims">{{ labels.previousClaims }}</label>
+      <input id="previousClaims" type="number" inputmode="numeric" min="0" max="20" step="1" formControlName="previousClaims"
+             [attr.aria-invalid]="showError('previousClaims')"
+             [attr.aria-describedby]="showError('previousClaims') ? 'previousClaims-error' : null" />
+      @if (showError('previousClaims')) {
+        <p id="previousClaims-error" class="field-error">Enter a whole number from 0 to 20.</p>
+      }
+    </div>
+
+    <button class="submit" type="submit" [disabled]="!canSubmit()" [attr.aria-busy]="loading()">
+      @if (loading()) { <span class="spinner" aria-hidden="true"></span> Getting your quote… } @else { Get quote }
+    </button>
+  </form>
+
+  @if (errorMessage(); as message) {
+    <p class="error-banner" role="alert">{{ message }}</p>
+  }
+
+  <div class="sr-only" aria-live="polite">{{ announcement() }}</div>
+
+  @if (quoteResult(); as quote) {
+    <!-- Phase 4: the essentials. Phase 5 moves this into QuoteResultComponent with the badge and applied factors. -->
+    <section class="card result" aria-labelledby="result-heading">
+      <h2 id="result-heading" #resultHeading tabindex="-1">Your quote</h2>
+      <p class="premium">
+        <strong>{{ quote.monthlyPremium | currency: 'GBP' }}</strong> a month · {{ quote.annualPremium | currency: 'GBP' }} a year
+      </p>
+      <p><strong>{{ quote.riskBandLabel }}</strong>, risk score {{ quote.riskScore }}</p>
+      <p>{{ quote.riskSummary }}</p>
+    </section>
+  }
+</main>
