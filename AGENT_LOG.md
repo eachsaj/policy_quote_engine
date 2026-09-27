@@ -246,3 +246,34 @@ Chronological record of significant agent interactions while building PolicyQuot
   - The first `baseRequest()` helper narrowed with a hand-written `typeof` check; it was replaced with a Zod parse, as the skill requires.
   - One documented `as` remains, in `configurability.spec.ts` (the typed-lookup idiom for the patch ops). It widens a function type and never touches data.
   - The wrong fixture value is recorded in Entry 14.
+
+## Entry 16: Phase 3: Lambda-style handler, local server with KB hot reload
+
+- **When:** 2026-09-27 18:23
+- **Phase / skill:** Phase 3 / `lambda-handler`
+- **Prompt:** "start phase 3"
+- **Output:**
+  - `src/http/types.ts` (local API Gateway-shaped types)
+  - `src/handler.ts`: `handler(event, context)` with a `Record<"METHOD /path", fn>` route map, CORS on every response, and 400/404/500 mapping
+  - `src/server.ts`: `node:http` translator; `loadKb()` before listen, which exits 1 with the named error; `fs.watchFile` hot reload with last-good fallback
+  - `backend/requests/{standard,elevated,high-risk}.json`
+  - `src/handler.spec.ts` (12 tests)
+
+  Results: `tsc` clean; lint clean; jest 11 suites, 136/136 passed; the any/switch/framework/AWS and outbound-call greps print nothing. Live on `npm start`:
+  - `/health` returns 200 with `kbVersion` 1.0.0.
+  - `{"age":12}` returns 400 with 6 field issues.
+  - The three samples return 10/STANDARD/£360, 30/ELEVATED/£540 and 85/HIGH_RISK/£792, all hand-computed in advance and matching.
+  - Unknown route → 404; preflight → 204 with CORS.
+  - Hot reload with no restart: Flat 10 → 20 and v1.0.1 took effect; invalid JSON was logged as "reload rejected; last good KB still serving" while quotes kept returning v1.0.1; the revert brought back 1.0.0 with a 0-line KB diff.
+  - A bad `KB_PATH` exits 1 with `factors.0.condition.operator: unknown operator "regex"`, and `node dist/server.js` serves `/health`.
+- **What changed:** `backend/src/{http/types,handler,server,handler.spec}.ts`, `backend/requests/*.json` (new); `CLAUDE.md` (status)
+- **Why:**
+  - R4 15: clean handler export and a table-driven route map; CORS on every status.
+  - Constraint 5 and "no internals": a 500 carries only `{ error, requestId }`, and the loader's detail goes to stderr (the spec asserts `regex` is absent from the body).
+  - Constraint 6: `npm start` alone runs it.
+  - R6 10: hot reload is what lets the live demo change the KB with no restart.
+  - The 500 test uses `jest.spyOn(loader, 'loadKb')` instead of `KB_PATH` plus `jest.isolateModules`. Re-requiring through isolateModules returns `any`, or needs dynamic `import()`, which ts-jest's CommonJS mode doesn't intercept. The spy is typed and was shown to take effect: without it the response would have been 200.
+- **Rejected / corrected:**
+  - Three details of the pattern were changed. Its 404 body echoed the caller's method and path; it is now a fixed `"Not found"`, so no input is reflected. An issue with an empty path now reports `(body)` instead of `""`. `server.ts` now catches the startup error and prints only the loader's message with exit code 1, instead of an uncaught stack trace.
+  - The agent's first background `npm start` failed: it ran in the repo root, with no `package.json`, because the `cd` didn't carry over. It was rerun as `npm --prefix backend start`, the form the README will use.
+  - Nothing from the reject table appeared in the first draft.
