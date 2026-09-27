@@ -9,11 +9,13 @@ import type { LoadedKb } from './types';
 
 const MS_PER_SECOND = 1000;
 
+/** KB_REFRESH_SECONDS in milliseconds; 0 (off) when unset, zero, negative or not a number. */
 const refreshIntervalMs = (): number => {
   const seconds = Number(process.env['KB_REFRESH_SECONDS'] ?? 0);
   return Number.isFinite(seconds) && seconds > 0 ? seconds * MS_PER_SECOND : 0;
 };
 
+// Per-container state: when the file was last checked, and its mtime then (undefined before the first check).
 let lastCheckAt = 0;
 let lastMtimeMs: number | undefined;
 

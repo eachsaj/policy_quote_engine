@@ -6,13 +6,17 @@ import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+/** The repo root, one level above this script. */
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+/** npm's executable name differs on Windows. */
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+/** The two services, each started with its own `npm start`. Names are padded so the prefixes line up. */
 const services = [
   { name: "backend ", dir: "backend", colour: "\x1b[36m" },
   { name: "frontend", dir: "frontend", colour: "\x1b[35m" },
 ];
 
+// First run: install each package's locked dependencies before starting anything.
 for (const { dir } of services) {
   const cwd = join(root, dir);
   if (!existsSync(join(cwd, "node_modules"))) {
@@ -22,9 +26,12 @@ for (const { dir } of services) {
   }
 }
 
+/** The running service processes. */
 const children = [];
+/** Set once shutdown starts, so the second child's exit doesn't trigger another shutdown. */
 let stopping = false;
 
+/** Stops every service that is still running, and exits with `code` once they have gone. */
 function stopAll(code) {
   if (stopping) return;
   stopping = true;
@@ -32,6 +39,10 @@ function stopAll(code) {
   process.exitCode = code;
 }
 
+/**
+ * Copies a child's output to this terminal line by line, each line prefixed with the service name.
+ * Partial lines are held until they end, so output from the two services never interleaves mid-line.
+ */
 function pipe(stream, prefix) {
   let buffered = "";
   stream.on("data", (chunk) => {
@@ -43,6 +54,7 @@ function pipe(stream, prefix) {
   stream.on("end", () => buffered && process.stdout.write(`${prefix}${buffered}\n`));
 }
 
+// Start both services. If either exits (a crash, or a port already in use), stop the other too.
 for (const { name, dir, colour } of services) {
   const child = spawn(npm, ["start"], { cwd: join(root, dir), env: { ...process.env, FORCE_COLOR: "1" } });
   const prefix = `${colour}[${name}]\x1b[0m `;
@@ -55,4 +67,5 @@ for (const { name, dir, colour } of services) {
   children.push(child);
 }
 
+// Ctrl+C (SIGINT) or a kill (SIGTERM) stops both services cleanly.
 for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => stopAll(0));

@@ -10,6 +10,7 @@ import type { SummaryToken } from './summary-tokens';
 // Calendar and currency facts, not scoring values: they never belong in the KB.
 const MONTHS_PER_YEAR = 12;
 const MINOR_UNITS = 100; // pence per pound, cents per euro
+/** Rounds to whole pence or cents. Used only on response fields, so no rounding error builds up in the maths. */
 const toMoney = (n: number): number => Math.round(n * MINOR_UNITS) / MINOR_UNITS;
 
 /**
@@ -17,9 +18,11 @@ const toMoney = (n: number): number => Math.round(n * MINOR_UNITS) / MINOR_UNITS
  * annualPremium = basePremium × riskMultiplier × coverageLoadFactor. Pure: no I/O, no clock.
  */
 export const getQuote = (request: QuoteRequest, kb: LoadedKb): QuoteResponse => {
-  const riskInput = Object.fromEntries(Object.entries(request).filter(([field]) => !unscoredFields.has(field))); // customerName never scored
+  // The engine sees only scored fields: customerName is stripped before scoring, never passed through.
+  const riskInput = Object.fromEntries(Object.entries(request).filter(([field]) => !unscoredFields.has(field)));
   const { score, appliedFactors } = scoreRisk(riskInput, kb);
   const currency = currencyOf(request.postcode); // same amounts, labelled for the postcode's market
+  // A factor's wording for this currency, when the KB has one; otherwise its default description is used.
   const wording = new Map(kb.factors.map((f) => [f.id, f.descriptions?.[currency]]));
   const band = findBand(score, kb.orderedBands);
   const annual = kb.basePremium * band.riskMultiplier * kb.coverageLoadFactor;

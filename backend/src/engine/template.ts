@@ -1,3 +1,4 @@
+/** A `{token}` placeholder in a KB template, e.g. `{score}` in a band summary. */
 const TOKEN = /\{(\w+)\}/g;
 
 /** The `{token}` names a template uses, in order of appearance. */

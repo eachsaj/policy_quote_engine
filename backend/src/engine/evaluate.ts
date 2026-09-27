@@ -4,6 +4,7 @@ import { operators } from './operators';
 /** The scoring input: request fields by name. The engine never names a field; it reads `condition.field` from the KB. */
 export type RiskInput = Readonly<Record<string, unknown>>;
 
+// Type guards for each node kind; the evaluators below use them so TypeScript knows each node's shape.
 export const isLeaf = (c: Condition): c is LeafCondition => 'field' in c && 'operator' in c;
 const isAll = (c: Condition): c is AllCondition => 'all' in c;
 const isAny = (c: Condition): c is AnyCondition => 'any' in c;
@@ -12,6 +13,7 @@ const isNot = (c: Condition): c is NotCondition => 'not' in c;
 /** A group node is named by its key; anything else is a leaf. Same rule as kb/schema.ts uses to validate. */
 const groupKeys = ['all', 'any', 'not'] as const;
 type NodeKind = (typeof groupKeys)[number] | 'leaf';
+/** Which evaluator handles a node: the group key it carries, or 'leaf'. */
 const kindOf = (c: Condition): NodeKind => groupKeys.find((k) => Object.hasOwn(c, k)) ?? 'leaf';
 
 /**

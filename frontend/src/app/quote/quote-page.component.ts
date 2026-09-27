@@ -12,6 +12,10 @@ import { buildQuoteForm, fieldLabels, toQuoteRequest } from './quote-form';
 import { QuoteResultComponent } from './quote-result.component';
 import { QuoteService } from './quote.service';
 
+/**
+ * The quote page: the form, the request, and the three UI state signals. It owns all writable state;
+ * the result panel and badge below it only read inputs.
+ */
 @Component({
   selector: 'app-quote-page',
   imports: [ReactiveFormsModule, QuoteResultComponent],
@@ -72,6 +76,10 @@ export class QuotePageComponent {
     return control.invalid && control.touched;
   }
 
+  /**
+   * Posts the form and moves the state through loading → result or loading → error. Invalid forms and
+   * double submits are ignored; touching every control first makes the inline errors appear.
+   */
   submit(): void {
     this.form.markAllAsTouched();
     const request = toQuoteRequest(this.form.getRawValue());
@@ -93,7 +101,10 @@ export class QuotePageComponent {
   }
 }
 
+// Narrowing helpers for the error body, which arrives as `unknown`.
+/** A plain object, so its keys can be read safely. */
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+/** A request field name the form has a label for, so a 400 issue can name the field the way the form does. */
 const isField = (f: unknown): f is keyof QuoteRequest => typeof f === 'string' && Object.hasOwn(fieldLabels, f);
 
 /** Turns an HTTP failure into customer-facing text. The error body is `unknown` and narrowed, never `any`. */

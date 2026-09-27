@@ -1,17 +1,21 @@
 // Generated from the backend contract (see AGENT_LOG): backend/src/quote/request.ts (Zod schema), quote/market.ts,
-// backend/src/quote/response.ts and backend/src/engine/score.ts (AppliedFactor), backend/src/handler.ts (error bodies).
+// backend/src/quote/response.ts and backend/src/engine/score.ts (AppliedFactor).
 // Keep in step with those files; change both in the same turn.
 
 /** Exactly the backend's `propertyTypes` enum, which is the brief's form options. */
 export const propertyTypes = ['House', 'Flat', 'Bungalow'] as const;
+/** One of the three property types the form offers. */
 export type PropertyType = (typeof propertyTypes)[number];
 
-/** Mirrors backend/src/quote/market.ts: the postcode's format picks the market, and the market the currency. */
+/** The currency a quote is shown in. Mirrors backend/src/quote/market.ts. */
 export type Currency = 'GBP' | 'EUR';
-export const markets: readonly { readonly pattern: RegExp; readonly currency: Currency }[] = [
+
+/** The postcode formats the backend accepts, and the currency each implies. The two never overlap. */
+const markets: readonly { readonly pattern: RegExp; readonly currency: Currency }[] = [
   { pattern: /^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$/i, currency: 'GBP' },               // UK postcode, e.g. SW1A 1AA
   { pattern: /^[ACDEFHKNPRTVWXY]\d[\dW] ?[\dACDEFHKNPRTVWXY]{4}$/i, currency: 'EUR' }, // Irish Eircode, e.g. D02 X285
 ];
+/** The currency for a postcode, or undefined while it isn't a complete UK postcode or Eircode (e.g. mid-typing). */
 export const currencyOf = (postcode: string): Currency | undefined =>
   markets.find((m) => m.pattern.test(postcode.trim()))?.currency;
 
@@ -25,6 +29,7 @@ export interface QuoteRequest {
   readonly previousClaims: number; // integer 0–20, in the last 5 years
 }
 
+/** A KB factor that contributed to the score. The UI shows `description` and `points` verbatim. */
 export interface AppliedFactor {
   readonly id: string;
   readonly description: string; // KB wording, shown verbatim
@@ -32,6 +37,7 @@ export interface AppliedFactor {
   readonly occurrences: number;
 }
 
+/** The premium formula's inputs, shown in the "How this premium is calculated" breakdown. */
 export interface CoverageDetails {
   readonly basePremium: number;
   readonly riskMultiplier: number;
@@ -40,6 +46,7 @@ export interface CoverageDetails {
   readonly items: readonly { readonly id: string; readonly description: string }[];
 }
 
+/** The body of a 200 from POST /policy/quote. Mirrors backend/src/quote/response.ts. */
 export interface QuoteResponse {
   readonly monthlyPremium: number;
   readonly annualPremium: number;
@@ -51,10 +58,4 @@ export interface QuoteResponse {
   readonly coverageDetails: CoverageDetails;
   readonly appliedFactors: readonly AppliedFactor[];
   readonly kbVersion: string;
-}
-
-/** Error bodies from handler.ts: 400 `{ error, issues? }`, 404 `{ error }`, 500 `{ error, requestId }`. */
-export interface ApiIssue {
-  readonly field: string;
-  readonly message: string;
 }

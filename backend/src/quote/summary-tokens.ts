@@ -4,4 +4,5 @@
  */
 export const summaryTokens = ['score', 'factorCount', 'label'] as const;
 
+/** One of the tokens above; the service fills a Record<SummaryToken, …>, so a new token must be supplied. */
 export type SummaryToken = (typeof summaryTokens)[number];

@@ -1,12 +1,9 @@
 import { z } from 'zod';
 
 /**
- * The operator registry: the only place operators exist.
- *
- * Each entry pairs a Zod schema for the operator's params (which sit flat on the KB leaf,
- * as in the brief: `{ "field", "operator", "min", "max" }` or `{ "field", "operator", "value" }`)
- * with a pure test. The KB schema validates leaf params through this registry, so an unknown
- * operator or bad params fail at load. Adding an operator is one entry here and nothing else.
+ * Builds one registry entry: the Zod schema for the operator's params, and `matches`, which tests a
+ * request value against a KB leaf. Params sit flat on the leaf, as in the brief:
+ * `{ "field", "operator", "min", "max" }` or `{ "field", "operator", "value" }`.
  */
 const defineOperator = <S extends z.ZodType>(params: S, test: (value: unknown, p: z.output<S>) => boolean) => ({
   params,
@@ -17,7 +14,10 @@ const defineOperator = <S extends z.ZodType>(params: S, test: (value: unknown, p
   },
 });
 
+/** A real number. Numeric operators never match a string such as "100", NaN or Infinity. */
 const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+
+// The param shapes operators share. Each is checked when the KB loads, so a bad leaf names its JSON path.
 const scalar = z.union([z.string(), z.number(), z.boolean()]);
 const single = z.object({ value: scalar });
 const numeric = z.object({ value: z.number() });
@@ -25,6 +25,10 @@ const range = z.object({ min: z.number(), max: z.number() }).refine((r) => r.min
 const valueList = z.object({ values: z.array(scalar).min(1) });
 const prefixList = z.object({ values: z.array(z.string().min(1)).min(1) });
 
+/**
+ * The operator registry: the only place operators exist. The KB schema validates each leaf's params
+ * through it, and the evaluator dispatches through it, so adding an operator is one entry here.
+ */
 export const operators = {
   eq: defineOperator(single, (v, p) => v === p.value),
   neq: defineOperator(single, (v, p) => v !== p.value),
@@ -44,9 +48,11 @@ export const operators = {
   ),
 } as const;
 
+/** An operator a KB leaf may name, e.g. "between". */
 export type OperatorName = keyof typeof operators;
 
-// The one `as` in this layer: Object.keys loses the literal key type of the object it describes.
+/**
+ * Every operator name, as the non-empty tuple z.enum() needs for the KB schema.
+ * The one `as` in this layer: Object.keys loses the literal key type of the object it describes.
+ */
 export const operatorNames = Object.keys(operators) as [OperatorName, ...OperatorName[]];
-
-export const isOperatorName = (name: string): name is OperatorName => Object.hasOwn(operators, name);
