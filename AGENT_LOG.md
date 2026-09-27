@@ -435,3 +435,34 @@ Chronological record of significant agent interactions while building PolicyQuot
   - The `kb-driven-tests` skill's own rule ("patch an in-memory copy of the real KB") was corrected. It was the root cause, not a one-off test bug.
   - The agent did not paper over the failure by renaming the case's id; that would only move the collision to the next factor the panel names.
   - The browser check was stopped after 3 attempts instead of looping, and the UI step is reported as unverified.
+
+## Entry 23: Phase 7: Docker images and compose with live KB mount
+
+- **When:** 2026-09-27 19:13
+- **Phase / skill:** Phase 7 / `lambda-handler` (backend Dockerfile), frontend image and compose per `specs/tech-stack.md` "Containers"; `claude-in-chrome` for the UI check
+- **Prompt:** "start phase 7"
+- **Output:**
+  - `backend/Dockerfile`: multi-stage `node:22.23-alpine`; the build stage compiles `dist/`; the runtime stage uses `npm ci --omit=dev`, bakes in the default KB at `/app/kb`, runs as `USER node`, reads `PORT`/`KB_PATH` from env, has a `HEALTHCHECK` using Node `fetch`, and runs `CMD node dist/server.js`.
+  - `frontend/Dockerfile`: Angular production build → `nginx:1.31-alpine`, with `nginx.conf` providing SPA fallback and proxying `/policy/` and `/health` to `backend:3000`.
+  - `.dockerignore` for both build contexts.
+  - `docker-compose.yml`: the repo root mounted read-only at `/app/kb`; the frontend waits for `service_healthy`.
+
+  Checks:
+  - `docker compose build` OK (backend 175 MB, mostly the node base; frontend 63 MB); both containers healthy.
+  - `:3000/health` and `:8080/health` report `kbVersion` 1.1.0.
+  - Deep link `/anything` returns 200 (SPA fallback).
+  - The four samples through nginx: 10 STANDARD £360, 30 ELEVATED £540, 120 HIGH_RISK £792, 45 ELEVATED £540, matching the fixtures.
+  - `docker compose exec backend whoami` → `node`.
+  - The runtime `node_modules` holds only `zod` (8.2 MB).
+  - A host KB edit made editor-style (temp file, then atomic rename; Flat 10 → 30, v1.1.1-docker) changed the next quote from 10 STANDARD to 30 ELEVATED, with 0 container restarts and 1 startup line; the revert reloaded 1.1.0 with a 0-line diff.
+  - In Chrome at `:8080`, the three bands rendered STANDARD £30.00 (10), ELEVATED £45.00 (30) and HIGH RISK £66.00 (120, 5 factors), all "Rules version 1.1.0".
+- **What changed:** `backend/Dockerfile`, `frontend/Dockerfile`, `frontend/nginx.conf`, `frontend/.dockerignore`, `.dockerignore`, `docker-compose.yml` (new); `README.md` (Docker path, layout); `lambda-handler/references/handler-pattern.md` (Dockerfile synced with the real one); `CLAUDE.md` (status)
+- **Why:**
+  - This is the brief's Dockerfile bonus: a multi-stage, Fargate-deployable backend whose `/health` returns the KB version (R4, R6).
+  - Compose gives a one-command run, and the npm path is still the required `npm start` per service (constraint 6).
+  - The directory mount plus stat polling is what keeps the live demo working in Docker.
+  - Base images are pinned to `node:22.23-alpine` (Node 22.23.3, which satisfies Angular 22's `^22.22.3`) and `nginx:1.31-alpine`, not floating tags.
+- **Rejected / corrected:**
+  - The first runtime image listed `@jest`, `@babel`, `@eslint` and `@typescript-eslint` under `node_modules`. On inspection they were **empty directories** that npm's `--omit=dev` leaves behind; the only real package was `zod`. They were removed anyway with `find -type d -empty -delete`, so the image doesn't misrepresent itself in a review. The earlier name-only check (`tsx|typescript|jest`) had passed and would have missed the scoped folders.
+  - The skill's reference Dockerfile (floating `node:22-alpine`, `COPY backend/ ./`) was brought in line with the real one.
+  - Known trade-off, left as is: the read-only root mount also exposes the rest of the repo inside the container at `/app/kb`. That is harmless locally, but a production image would use the baked-in KB or a versioned artefact (README "KB versioning").

@@ -15,7 +15,17 @@ npm --prefix frontend start       # http://localhost:4200  (proxies /policy and 
 
 Run the backend and frontend `start` commands in separate terminals, then open http://localhost:4200.
 
-Sample requests, one per band plus the compound factor, are in [`backend/requests/`](backend/requests):
+### Or with Docker (1 command)
+
+```bash
+docker compose up --build         # http://localhost:8080  (backend also on :3000)
+```
+
+- `backend/Dockerfile` is a multi-stage, Fargate-ready image: non-root, configured by env, with a `HEALTHCHECK` on `GET /health` (which returns the active KB version) and only production dependencies. It runs locally only.
+- `frontend/Dockerfile` builds Angular and serves it with nginx, which proxies `/policy` and `/health` to the backend, so the browser stays same-origin.
+- Compose mounts the repo root **read-only** at `/app/kb`, so `KB_PATH=/app/kb/risk-kb.json` is the live file. Edit `risk-kb.json` on the host and the next quote uses it: no rebuild, no restart.
+
+Sample requests, one per band plus the compound and flood-zone demos, are in [`backend/requests/`](backend/requests):
 
 ```bash
 curl -s -XPOST localhost:3000/policy/quote -H 'Content-Type: application/json' -d @backend/requests/high-risk.json
@@ -83,8 +93,9 @@ In production, rule sets would be version-controlled like code:
 
 ```
 risk-kb.json        the Knowledge Base
-backend/            Lambda-style handler(event, context), node:http adapter, risk engine, Jest tests
-frontend/           Angular 22 standalone app: signals, Reactive Forms, hand-written CSS
+backend/            Lambda-style handler(event, context), node:http adapter, risk engine, Jest tests, Dockerfile
+frontend/           Angular 22 standalone app: signals, Reactive Forms, hand-written CSS, Dockerfile + nginx.conf
+docker-compose.yml  the whole app on :8080 with the KB mounted live
 specs/              mission, tech stack, roadmap
 CLAUDE.md, .claude/ agent instructions and project skills
 AGENT_LOG.md        the agent interaction log
