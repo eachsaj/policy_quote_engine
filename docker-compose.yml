@@ -1,0 +1,24 @@
+# The whole app, locally, with one command:  docker compose up --build   →  http://localhost:8080
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount the repo root DIRECTORY (read-only), not the single file: editors save by atomic rename,
+      # and a single-file bind mount keeps the old inode, so the container would never see the edit.
+      # The backend's fs.watchFile stat-polls KB_PATH, so a host edit is live on the next quote, no rebuild.
+      - ./:/app/kb:ro
+    environment:
+      KB_PATH: /app/kb/risk-kb.json
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "8080:8080"
+    depends_on:
+      backend:
+        condition: service_healthy

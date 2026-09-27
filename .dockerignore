@@ -1,0 +1,13 @@
+# Context for backend/Dockerfile (built from the repo root). Only backend/ and risk-kb.json are needed.
+**/node_modules
+**/dist
+**/coverage
+**/.angular
+.git
+.claude
+.vscode
+specs
+frontend
+*.md
+**/*.log
+.DS_Store

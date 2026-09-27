@@ -232,18 +232,20 @@ Also cover: 404 for an unknown route (with CORS headers), 204 for `OPTIONS /poli
 This follows `specs/tech-stack.md` "Containers". It is Fargate-ready (stateless, env config, stdout/stderr logs, health endpoint) but only ever runs locally.
 
 ```dockerfile
-FROM node:22-alpine AS build
+FROM node:22.23-alpine AS build
 WORKDIR /app
 COPY backend/package*.json ./
 RUN npm ci
-COPY backend/ ./
+COPY backend/tsconfig.json backend/tsconfig.build.json ./
+COPY backend/src ./src
 RUN npm run build
 
-FROM node:22-alpine
+FROM node:22.23-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production PORT=3000 KB_PATH=/app/kb/risk-kb.json
 COPY backend/package*.json ./
-RUN npm ci --omit=dev
+# find: npm --omit=dev leaves empty @scope dirs of dev packages behind; remove them so the image looks as lean as it is
+RUN npm ci --omit=dev && npm cache clean --force && find node_modules -mindepth 1 -type d -empty -delete
 COPY --from=build /app/dist ./dist
 # Default KB baked in; docker-compose bind-mounts the repo root directory over /app/kb for live edits.
 COPY risk-kb.json ./kb/risk-kb.json
