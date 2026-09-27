@@ -1,0 +1,137 @@
+:host {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+}
+
+.premium {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.premium-monthly {
+  font-size: clamp(2rem, 6vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.premium-unit,
+.premium-annual {
+  color: var(--text-muted);
+}
+
+.premium-annual {
+  margin: 0;
+  flex-basis: 100%;
+  order: 3;
+}
+
+.summary {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+.section-title {
+  margin: var(--space-2) 0 0;
+  font-size: 1rem;
+}
+
+.factors {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.factor {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+}
+
+.factor + .factor {
+  border-top: 1px solid var(--border);
+}
+
+.factor-times {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.factor-points {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+}
+
+.total {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 var(--space-4);
+  font-variant-numeric: tabular-nums;
+}
+
+.mismatch,
+.no-factors {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.breakdown summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.breakdown summary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.breakdown dl {
+  margin: var(--space-3) 0 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.breakdown dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.breakdown dt {
+  color: var(--text-muted);
+}
+
+.breakdown dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.kb-version {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}

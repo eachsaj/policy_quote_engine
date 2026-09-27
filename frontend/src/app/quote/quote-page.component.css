@@ -142,6 +142,40 @@
   outline: none;
 }
 
-.premium {
-  font-size: 1.15rem;
+.placeholder {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.empty {
+  margin: 0;
+  color: var(--text-muted);
+  text-align: center;
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.skeleton {
+  height: 1rem;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--surface-sunken) 25%, var(--border) 50%, var(--surface-sunken) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+
+.skeleton-title {
+  height: 2.2rem;
+  width: 45%;
+}
+
+.skeleton-line.short {
+  width: 60%;
+}
+
+@keyframes shimmer {
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
 }

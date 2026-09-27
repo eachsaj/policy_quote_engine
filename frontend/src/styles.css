@@ -4,6 +4,7 @@
 
   --bg: #f4f5f8;
   --surface: #ffffff;
+  --surface-sunken: #f1f2f6;
   --text: #1b1d24;
   --text-muted: #555a66;
   --border: #dde0e7;
@@ -32,6 +33,7 @@
   :root {
     --bg: #121319;
     --surface: #1c1e27;
+    --surface-sunken: #252834;
     --text: #eceef4;
     --text-muted: #a4a9b6;
     --border: #2e313d;

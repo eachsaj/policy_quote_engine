@@ -333,3 +333,35 @@ Chronological record of significant agent interactions while building PolicyQuot
   - Node 25 is outside the Angular CLI's supported range (`^22 || ^24 || >=26`) and produced warnings only. The README should recommend Node 22 or 24 LTS.
   - A browser-check script hung because it awaited `requestAnimationFrame` in a background tab; it was replaced with timer waits.
   - A backend 400 can't be triggered from the UI, because the validators block exactly what Zod rejects. That path is covered by the unit test, not the browser.
+
+## Entry 19: Phase 5: results UI, risk band badge and KB-driven factor rendering
+
+- **When:** 2026-09-27 18:45
+- **Phase / skill:** Phase 5 / `angular-signals-component`, then `claude-in-chrome` for the browser check
+- **Prompt:** "start phase 5"
+- **Output:**
+  - `RiskBandBadgeComponent`: `riskBand = input.required<string>()` and `label = input<string>()`; the text is `label() ?? riskBand()`, and the colour comes from a host `data-band` attribute with a neutral fallback plus a dot, so colour is never the only signal
+  - `QuoteResultComponent`: `input.required<QuoteResponse>()` and `computed()` for £ formatting, sorted factors, total and a totals-agree check; `@for` over `appliedFactors` showing each KB `description`, `× occurrences` and `+points`; KB summary verbatim; a premium breakdown in `<details>`; `kbVersion`
+  - Page: loading skeleton, empty state and error state
+  - Badge colours for light and dark mode, all pairs checked by script at ≥ 6.54:1 contrast (WCAG AA is 4.5:1)
+  - Specs: badge (3 KB bands, an unknown band, input change) and result (premiums, badge and summary pass-through, factor rows sorted, a factor the code has never seen, no factors, mismatch, breakdown)
+
+  Results: `ng build` OK (64.4 kB transferred); `ng test` 5 files, 38/38 passed; `ng lint` passes; backend 136/136 still pass; all frontend greps print nothing, including a new one: no band ids, band labels or factor ids in frontend `.ts`/`.html` outside specs; band ids appear only in the badge's CSS.
+
+  In Chrome, the three samples rendered as follows:
+  - standard: £30.00 / £360.00, STANDARD, one row "Flat — higher shared risk +10"
+  - elevated: £45.00 / £540.00, ELEVATED, "1–2 previous claims × 2 +30"
+  - high risk: £66.00 / £792.00, HIGH RISK, four rows sorted 30/25/20/10, total 85
+
+  With `flood_zone` (+15, `starts_with` EX/PL, v1.1.0) added to `risk-kb.json` on the running server, resubmitting the same form showed a fifth row "Property in a flood-risk postcode area +15", total 100, "Rules version 1.1.0". Only `risk-kb.json` changed, and it was reverted to a 0-line diff. At 390px width (measured in an iframe) the form is one column, with no horizontal scroll.
+- **What changed:** `frontend/src/app/risk-band-badge/*` (new); `frontend/src/app/quote/quote-result.component.*` (new); `quote-page.component.{ts,html,css}` (uses the result component; loading, empty and error states; `CurrencyPipe` removed); `frontend/src/styles.css` (`--surface-sunken`); `CLAUDE.md` (status)
+- **Why:**
+  - R3 20: `input()`, `computed()` and a presentational component with no writable state.
+  - R1 25: the brief's "UI reflects `appliedFactors` from the KB" is proven twice, by a spec rendering an unknown factor and by the live flood-zone edit.
+  - Constraint 4: every style is hand-written.
+  - Decisions not in the specs: the premium breakdown (`coverageDetails`) is collapsed by default; if the factor total ever differs from `riskScore`, the UI shows `riskScore` and a visible note rather than hiding it; the reference's `role="status"` on the badge was dropped, because the page's `aria-live` region already announces the result, and a second live region would announce the band twice.
+- **Rejected / corrected:**
+  - The agent's first result spec had 3 failing assertions. They compared `textContent` across sibling elements, and Angular strips inter-element whitespace ("score90"), while the visible spacing comes from flex gaps. The component was right and the tests were wrong; they now assert on individual elements.
+  - A doc comment in the badge quoting "HIGH RISK" tripped the new wording gate; it was reworded.
+  - `resize_window` did not change the viewport (it stayed 2516px), and the agent did not retry it; phone width was measured in a 390px iframe instead.
+  - The agent's first command to stop the servers used invalid `lsof` syntax, so it silently didn't stop them. This was caught by a follow-up check and fixed.

@@ -85,14 +85,17 @@
   <div class="sr-only" aria-live="polite">{{ announcement() }}</div>
 
   @if (quoteResult(); as quote) {
-    <!-- Phase 4: the essentials. Phase 5 moves this into QuoteResultComponent with the badge and applied factors. -->
     <section class="card result" aria-labelledby="result-heading">
       <h2 id="result-heading" #resultHeading tabindex="-1">Your quote</h2>
-      <p class="premium">
-        <strong>{{ quote.monthlyPremium | currency: 'GBP' }}</strong> a month · {{ quote.annualPremium | currency: 'GBP' }} a year
-      </p>
-      <p><strong>{{ quote.riskBandLabel }}</strong>, risk score {{ quote.riskScore }}</p>
-      <p>{{ quote.riskSummary }}</p>
+      <app-quote-result [quote]="quote" />
     </section>
+  } @else if (loading()) {
+    <section class="card placeholder" aria-hidden="true">
+      <div class="skeleton skeleton-title"></div>
+      <div class="skeleton skeleton-line"></div>
+      <div class="skeleton skeleton-line short"></div>
+    </section>
+  } @else if (!errorMessage()) {
+    <p class="card placeholder empty">Your premium, risk band and the factors behind it will appear here.</p>
   }
 </main>

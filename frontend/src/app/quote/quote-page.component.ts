@@ -4,15 +4,15 @@ import {
   afterNextRender, computed, effect, inject, signal, viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { CurrencyPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { propertyTypes, type QuoteRequest, type QuoteResponse } from '../models/quote';
 import { buildQuoteForm, fieldLabels, toQuoteRequest } from './quote-form';
+import { QuoteResultComponent } from './quote-result.component';
 import { QuoteService } from './quote.service';
 
 @Component({
   selector: 'app-quote-page',
-  imports: [ReactiveFormsModule, CurrencyPipe],
+  imports: [ReactiveFormsModule, QuoteResultComponent],
   templateUrl: './quote-page.component.html',
   styleUrl: './quote-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

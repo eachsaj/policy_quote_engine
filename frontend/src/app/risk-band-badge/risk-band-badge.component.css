@@ -1,0 +1,39 @@
+:host {
+  --badge-bg: #e8e8ec;
+  --badge-fg: #2b2b33;
+  --badge-ring: #b9bac4;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--badge-ring);
+  background: var(--badge-bg);
+  color: var(--badge-fg);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* A dot in the band colour; the text always carries the KB label, so colour is never the only signal. */
+:host::before {
+  content: '';
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Colour only. Band ids appear here and nowhere else in the frontend. All pairs checked at >= 6.5:1 contrast. */
+:host([data-band='STANDARD']) { --badge-bg: #dff3e4; --badge-fg: #14532d; --badge-ring: #a9dcb7; }
+:host([data-band='ELEVATED']) { --badge-bg: #fff1d6; --badge-fg: #7a4a00; --badge-ring: #f1cf8a; }
+:host([data-band='HIGH_RISK']) { --badge-bg: #fde2e1; --badge-fg: #8a1c17; --badge-ring: #f3aaa5; }
+
+@media (prefers-color-scheme: dark) {
+  :host { --badge-bg: #353846; --badge-fg: #e4e5ec; --badge-ring: #4b4f60; }
+  :host([data-band='STANDARD']) { --badge-bg: #123d24; --badge-fg: #b6f0c6; --badge-ring: #1f6a3e; }
+  :host([data-band='ELEVATED']) { --badge-bg: #4a3100; --badge-fg: #ffd98a; --badge-ring: #7a5300; }
+  :host([data-band='HIGH_RISK']) { --badge-bg: #5c1612; --badge-fg: #ffc2bd; --badge-ring: #8f2a24; }
+}
