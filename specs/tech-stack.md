@@ -128,6 +128,7 @@ src/
 ├── kb/types.ts          Kb, RiskBand, Factor, Condition (leaf | group) interfaces
 ├── kb/schema.ts         Zod KB schema built from the operator registry
 ├── kb/loader.ts         read → parse → validate → consistency checks → cache; last-good on reload
+├── kb/refresh.ts        currentKb(): in a Lambda container, re-checks KB_PATH every KB_REFRESH_SECONDS (off by default)
 └── engine/              see above
 ```
 

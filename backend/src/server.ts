@@ -3,6 +3,7 @@ import { watchFile } from 'node:fs';
 import { createServer } from 'node:http';
 import { handler } from './handler';
 import { kbPath, loadKb, reloadKb } from './kb/loader';
+import { reportReload } from './kb/refresh';
 
 // A translator only: HTTP request → HttpEvent → handler → HTTP response.
 // No routing, no validation, no framework, so local runs and "Lambda" share one code path.
@@ -20,14 +21,7 @@ try {
 
 // Hot reload for the live demo. Stat polling (not inotify) also works across Docker bind mounts.
 // A valid edit is swapped in atomically; an invalid one is logged and the last good KB keeps serving.
-watchFile(kbPath(), { interval: KB_POLL_MS }, () => {
-  const result = reloadKb();
-  if (result.ok) {
-    console.log(JSON.stringify({ event: 'kb reloaded', kbVersion: result.kb.version, factorCount: result.kb.factors.length }));
-  } else {
-    console.error(JSON.stringify({ event: 'kb reload rejected; last good KB still serving', error: result.error.message }));
-  }
-});
+watchFile(kbPath(), { interval: KB_POLL_MS }, () => reportReload(reloadKb()));
 
 createServer((req, res) => {
   const chunks: Buffer[] = [];

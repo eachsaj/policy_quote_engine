@@ -1,5 +1,5 @@
 import type { HandlerContext, HttpEvent, HttpResult } from './http/types';
-import { loadKb } from './kb/loader';
+import { currentKb } from './kb/refresh';
 import { quoteRequestSchema } from './quote/request';
 import { getQuote } from './quote/service';
 
@@ -39,11 +39,11 @@ const postQuote = (event: HttpEvent): HttpResult => {
       issues: parsed.error.issues.map((i) => ({ field: i.path.join('.') || '(body)', message: i.message })),
     });
   }
-  return respond(200, getQuote(parsed.data, loadKb()));
+  return respond(200, getQuote(parsed.data, currentKb()));
 };
 
 const getHealth = (): HttpResult => {
-  const kb = loadKb();
+  const kb = currentKb();
   return respond(200, { status: 'ok', kbVersion: kb.version, schemaVersion: kb.schemaVersion, factorCount: kb.factors.length });
 };
 

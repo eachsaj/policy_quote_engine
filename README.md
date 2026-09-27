@@ -66,18 +66,85 @@ Operators: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `between` (inclusive), `outsid
 
 The backend validates the KB at startup and on every change. A bad KB names the offending path, for example `factors.3.condition.all.1.operator: unknown operator "nope"`.
 
-## Adding a factor
+## Modifying the Knowledge Base
 
-1. Append an entry to `factors[]` in `risk-kb.json` and bump `version` (minor for a factor added, changed or removed).
-2. Add a scenario fixture, `backend/test/scenarios/<id>.json`, with the expected score worked out by hand. The coverage test fails if a factor has no fixture.
-3. The running backend reloads the file within a second; no restart. Check `curl localhost:3000/health` for the new `kbVersion`.
+Every scoring rule is in `risk-kb.json`. Changing a rule edits that file and its test fixtures only. Nothing under `backend/src` or `frontend/src` changes, and the running backend picks the edit up within a second, without a restart.
+
+### With the `kb-factor` skill (recommended)
+
+In Claude Code, describe the rule in plain English. Invoke the skill by name, or just describe the rule and it triggers on its own:
+
+```
+/kb-factor add a flood zone factor for Eircodes in routing areas T12 or N37, +15
+claims penalty should be 20 not 15
+pause the flat factor
+```
+
+The skill ([`.claude/skills/kb-factor/SKILL.md`](.claude/skills/kb-factor/SKILL.md)) then:
+
+1. **Restates the rule in KB terms** before editing, for example `flood_zone: postcode starts_with [T12, N37], +15`. If the wording is ambiguous ("over" or "or more"?), it asks.
+2. **Edits `risk-kb.json`** and bumps `version`.
+3. **Adds or updates a scenario fixture** in `backend/test/scenarios/<id>.json`, with one request that triggers the factor, one near-miss that doesn't, and the arithmetic in `why`. For a new factor it also adds a sample request in `backend/requests/<id>.json`.
+4. **Proves the change**: the KB loads, `git status` shows nothing changed under `src/`, `npx jest` passes, `/health` shows the new `kbVersion`, a `curl` quote lists the factor in `appliedFactors`, and the UI shows it.
+5. **Logs the change** in `AGENT_LOG.md`.
+
+| Change | Example request | What it does to `risk-kb.json` |
+|---|---|---|
+| Add | "Bungalows over €400k add +12" | appends a new entry to `factors[]` |
+| Change a weight | "the age factor should be +25" | edits only `points`; the `id` stays the same |
+| Disable | "pause the flat factor" | sets `"enabled": false` and keeps the entry |
+| Remove | "drop property_value_high" | deletes the entry |
+| Combine fields | "Flat AND over €500k is +35" | adds a condition group: `all` (AND), `any` (OR) or `not` |
+
+**When it stops.** A rule can only read the six request fields (`customerName`, `age`, `propertyType`, `propertyValue`, `postcode`, `previousClaims`) and use the operators listed above. If a rule needs more, the skill says so instead of working around it:
+- a new field (such as `yearBuilt`) goes to the `lambda-handler` skill and the Angular form;
+- a new operator (such as a regex) goes to `risk-engine`;
+- a discount, a multiplier or a new band is a scoring-model change for `risk-engine`.
+
+### By hand
+
+1. **Edit `risk-kb.json`.**
+   - To add a factor, append an entry to `factors[]` with a new snake_case `id`, a customer-facing `description` (the UI shows it verbatim), an integer `points`, and a `condition`.
+   - To change a factor, edit only the key that changes and keep its `id`.
+   - Set `"enabled": false` to pause a factor, or delete the entry to remove it.
+   - Field names and enum values must match the request exactly: `propertyType` is `House`, `Flat` or `Bungalow`.
+
+   ```json
+   { "id": "flood_zone", "points": 15, "description": "Property in a flood-risk Eircode routing area",
+     "condition": { "field": "postcode", "operator": "starts_with", "values": ["T12", "N37"] } }
+   ```
+
+2. **Bump `version`**: minor (`1.1.1` → `1.2.0`) for a factor added, changed, disabled or removed, and patch for a wording-only change. Leave `schemaVersion` unchanged.
+3. **Update the fixtures.**
+   - A new factor needs `backend/test/scenarios/<id>.json`, with each expected score worked out by hand. The coverage test fails if a factor has no fixture.
+   - A change or removal moves expected scores in existing fixtures. Update them and note which moved and why.
+   - The fixture format is described in [`.claude/skills/kb-driven-tests/SKILL.md`](.claude/skills/kb-driven-tests/SKILL.md).
+4. **Verify** with the backend still running (don't restart it, because that hides whether hot reload works):
+
+   ```bash
+   npm --prefix backend test
+   curl -s localhost:3000/health                          # shows the new kbVersion
+   curl -s -XPOST localhost:3000/policy/quote -H 'Content-Type: application/json' \
+     -d @backend/requests/<id>.json                       # appliedFactors lists the factor
+   ```
+
+   If the edit is invalid, the backend logs an error naming the JSON path and **keeps serving the last good KB**. Fix the file and it reloads.
 
 ## KB versioning
 
 Two version numbers do different jobs:
 
-- **`version` (the rules).** Bumped on every rule change and returned in every quote, so each quote records the rule set that priced it. A new version is live as soon as the file changes, because the backend watches `KB_PATH` and swaps in a valid KB atomically.
+- **`version` (the rules).** Bumped on every rule change and returned in every quote, so each quote records the rule set that priced it. A new version is live as soon as the file changes, without a restart or a redeploy (see "Picking up a new KB" below).
 - **`schemaVersion` (the shape).** Bumped only when the KB's structure changes in a way old code can't read. The loader lists the shapes it supports (`supportedSchemaVersions`) and rejects any other with a clear error.
+
+Picking up a new KB, in each place the handler runs:
+
+| Runs as | How a changed `KB_PATH` goes live |
+|---|---|
+| `npm start` / Docker | `server.ts` watches the file (`fs.watchFile`, stat polling) and reloads within a second. |
+| A Lambda container | No `server.ts`, so no watcher. Set **`KB_REFRESH_SECONDS`** (for example `30`): the handler stats the file at most once per interval and reloads when its mtime changes ([`kb/refresh.ts`](backend/src/kb/refresh.ts)). The KB file sits on a mounted file system (such as EFS) that the publishing pipeline writes to, so there is no redeploy and no wait for a cold start. Unset or `0` means a container keeps the KB it loaded at cold start. |
+
+Both paths go through the same `reloadKb()`, so the rules below hold in both. `backend/src/kb/refresh.spec.ts` drives the handler as a warm container would.
 
 How breaking schema changes are handled **without redeploying**:
 
