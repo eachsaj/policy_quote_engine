@@ -1,0 +1,20 @@
+[
+  {
+    "name": "2 claims are a near-miss (the low-claims factor applies instead)",
+    "request": { "previousClaims": 2 },
+    "expect": { "riskScore": 30, "riskBand": "ELEVATED", "appliedFactorIds": ["previous_claims_low"] },
+    "why": "2 is not >= 3; between 1–2 matches previous_claims_low: 15 × 2 = 30 → ELEVATED"
+  },
+  {
+    "name": "3 claims score per occurrence",
+    "request": { "previousClaims": 3 },
+    "expect": { "riskScore": 90, "riskBand": "HIGH_RISK", "appliedFactorIds": ["previous_claims_high"], "annualPremium": 792, "monthlyPremium": 66 },
+    "why": "gte 3 matches; perOccurrence 30 × 3 = 90 → HIGH_RISK (61+); 300 × 2.2 × 1.2 = 792; / 12 = 66"
+  },
+  {
+    "name": "20 claims, the most the request allows",
+    "request": { "previousClaims": 20 },
+    "expect": { "riskScore": 600, "riskBand": "HIGH_RISK", "appliedFactorIds": ["previous_claims_high"], "annualPremium": 792 },
+    "why": "30 × 20 = 600 → HIGH_RISK (61–999, so no clamp needed); 300 × 2.2 × 1.2 = 792"
+  }
+]

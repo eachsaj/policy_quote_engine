@@ -1,0 +1,8 @@
+{
+  "name": "removing the flat factor changes the quote with no code change",
+  "request": { "propertyType": "Flat" },
+  "patch": [{ "op": "removeFactor", "id": "property_type_flat" }],
+  "before": { "riskScore": 10, "riskBand": "STANDARD", "appliedFactorIds": ["property_type_flat"] },
+  "after": { "riskScore": 0, "riskBand": "STANDARD", "appliedFactorIds": [] },
+  "why": "before Flat +10; after the entry is deleted nothing matches → 0"
+}

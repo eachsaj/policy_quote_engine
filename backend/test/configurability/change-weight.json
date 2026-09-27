@@ -1,0 +1,8 @@
+{
+  "name": "changing the claims weight from 15 to 20 changes the quote with no code change",
+  "request": { "previousClaims": 2 },
+  "patch": [{ "op": "setPoints", "id": "previous_claims_low", "points": 20 }],
+  "before": { "riskScore": 30, "riskBand": "ELEVATED", "appliedFactorIds": ["previous_claims_low"] },
+  "after": { "riskScore": 40, "riskBand": "ELEVATED", "appliedFactorIds": ["previous_claims_low"] },
+  "why": "before 15 × 2 = 30; after 20 × 2 = 40; both ELEVATED (26–60)"
+}

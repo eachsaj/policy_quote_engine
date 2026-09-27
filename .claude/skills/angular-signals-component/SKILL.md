@@ -1,6 +1,6 @@
 ---
 name: angular-signals-component
-description: Builds and changes PolicyQuote's Angular UI with signal-based state, covering the quote page, the reactive quote form, the results panel and the reusable RiskBandBadgeComponent. Use for anything under frontend/src/app, including loading/quoteResult/errorMessage signals, computed() display state, effect() side effects, input() components, QuoteService (HttpClient POST /policy/quote), models/quote.ts, form validators, rendering appliedFactors from the KB, the risk band badge and its tests. Use it even when the request only says "show the premium", "the badge colour is wrong", "add a field to the form", "the button doesn't disable" or "render the applied factors". It sits on top of angular-developer (general Angular guidance) and overrides it where this project's brief differs.
+description: Builds and changes PolicyQuote's Angular UI with signal-based state, covering the quote page, the reactive quote form, the results panel and the reusable RiskBandBadgeComponent. Use for anything under frontend/src/app, including loading/quoteResult/errorMessage signals, computed() display state, effect() side effects, input() components, QuoteService (HttpClient POST /policy/quote), models/quote.ts, form validators, rendering appliedFactors from the KB, the risk band badge and its tests. Use it even when the request only says "show the premium", "the badge colour is wrong", "add a field to the form", "the button doesn't disable" or "render the applied factors". It sits on top of angular-developer and angular-new-app and overrides them where the brief differs (Reactive Forms, RxJS HttpClient, no Tailwind or UI libraries).
 ---
 
 # Angular signals component
@@ -26,7 +26,8 @@ Rubric: Angular Signals & Reactivity (R3 20), plus "the UI reflects `appliedFact
 | New v22 apps should prefer Signal Forms | **Reactive Forms** (`FormGroup`, `Validators`) | The brief requires reactive forms explicitly (`tech-stack.md` Frontend) |
 | `httpResource` / `resource` for async data | **`HttpClient` returning an Observable**, results written into signals | The brief requires RxJS `HttpClient` for `POST /policy/quote`; `httpResource` is for reads |
 | v20 naming ("intent over role", no `Component` suffix) | Keep **`RiskBandBadgeComponent`** | The brief names the class |
-| Tailwind reference | Hand-written CSS with custom properties | No UI libraries or Tailwind (`tech-stack.md`) |
+| Tailwind reference | Hand-written CSS with custom properties | The brief's constraint 4 asks us to show our own CSS; no UI libraries or Tailwind (`tech-stack.md`) |
+| `angular-new-app`: "add tailwind" step, global `npm install -g @angular/cli` | Skip the Tailwind step; scaffold with `npx @angular/cli new … --style=css` | Constraint 4; the global `ng` isn't installed (`tech-stack.md` Frontend) |
 
 ## Rules
 

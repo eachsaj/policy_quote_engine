@@ -1,0 +1,57 @@
+<div class="headline">
+  <p class="premium">
+    <span class="premium-monthly">{{ monthly() }}</span>
+    <span class="premium-unit">a month</span>
+  </p>
+  <p class="premium-annual">{{ annual() }} a year</p>
+  <app-risk-band-badge [riskBand]="quote().riskBand" [label]="quote().riskBandLabel" />
+</div>
+
+<p class="summary">{{ quote().riskSummary }}</p>
+
+<h3 class="section-title">Risk factors applied</h3>
+@if (sortedFactors().length > 0) {
+  <ul class="factors">
+    @for (f of sortedFactors(); track f.id) {
+      <li class="factor">
+        <span class="factor-text">
+          {{ f.description }}
+          @if (f.occurrences > 1) { <span class="factor-times">× {{ f.occurrences }}</span> }
+        </span>
+        <span class="factor-points">+{{ f.points }}</span>
+      </li>
+    }
+  </ul>
+  <p class="total">
+    <span>Total risk score</span>
+    <strong>{{ quote().riskScore }}</strong>
+  </p>
+  @if (!totalsAgree()) {
+    <p class="mismatch" role="note">The factors listed add up to {{ totalPoints() }}; the quoted risk score is {{ quote().riskScore }}.</p>
+  }
+} @else {
+  <p class="no-factors">No risk factors applied. Risk score {{ quote().riskScore }}.</p>
+}
+
+<details class="breakdown">
+  <summary>How this premium is calculated</summary>
+  <dl>
+    <div><dt>Base premium</dt><dd>{{ basePremium() }}</dd></div>
+    <div><dt>Risk multiplier</dt><dd>× {{ quote().coverageDetails.riskMultiplier }}</dd></div>
+    <div><dt>Coverage load factor</dt><dd>× {{ quote().coverageDetails.coverageLoadFactor }}</dd></div>
+    <div><dt>Annual premium</dt><dd>{{ annual() }}</dd></div>
+    <div><dt>Property value</dt><dd>{{ sumInsured() }}</dd></div>
+    @if (quote().coverageDetails.items.length > 0) {
+      <div>
+        <dt>Cover included</dt>
+        <dd>
+          @for (item of quote().coverageDetails.items; track item.id; let last = $last) {
+            {{ item.description }}@if (!last) {, }
+          }
+        </dd>
+      </div>
+    }
+  </dl>
+</details>
+
+<p class="kb-version">Rules version {{ quote().kbVersion }}</p>

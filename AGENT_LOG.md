@@ -139,3 +139,229 @@ Chronological record of significant agent interactions while building PolicyQuot
   - band ids may appear only as CSS `[data-band]` selectors
 
   No code has been compiled, because `frontend/` doesn't exist yet.
+
+## Entry 11: Align specs, skills and CLAUDE.md with the brief
+
+- **When:** 2026-09-27 17:47
+- **Phase / skill:** Phase 0 (roadmap: fix `lambda-handler`, update `CLAUDE.md`) / `agent-log`
+- **Prompt:** "verify the current skills and plans are aligned with constraints and rules, such as [the brief's 8 constraints, pasted]", then "SOLUTION.md is small", then "align plans, skills, and spec fully aligned with requirement document /Users/saj/agi/Exercise_PolicyQuote 1- AIG.pdf"
+- **Output:** The agent read the brief (8 pages), all specs, skills and references, and reported the design aligned with all 8 constraints on paper but with gaps in the skill files that an agent would copy into code. It then fixed them:
+  - `lambda-handler`: six-field request with `House`/`Flat`/`Bungalow` and `customerName`, KB hot reload in `server.ts`, the Dockerfile from the Containers spec, new reject rows and checks
+  - a stronger no-numbers grep, `no-magic-numbers` and an outbound-call grep
+  - an `angular-new-app` override, and `CLAUDE.md` rewritten around `specs/` and the 8 constraints
+  - `SOLUTION.md` cut to 223 words
+- **What changed:** `CLAUDE.md`, `SOLUTION.md`, `specs/tech-stack.md`, `specs/roadmap.md`, `specs/mission.md`, `.claude/skills/lambda-handler/SKILL.md`, `lambda-handler/references/handler-pattern.md`, `risk-engine/SKILL.md`, `risk-engine/references/engine-pattern.md` (`kbPath` exported for the watcher), `angular-signals-component/SKILL.md`, `agent-log/SKILL.md`
+- **Why:** Gaps found by checking each constraint against the brief:
+  - The number grep `[0-9]{2,}` misses `2.2`, `1.5` and `1.2`, the exact multipliers constraint 3 bans (R1 25). The new regex was tested with macOS grep: it flags `2.2` and `15` and passes `0`, `1` and `ES2023`.
+  - Constraint 5 was stated but never checked. Constraint 4 could be broken through `angular-new-app`'s Tailwind step.
+  - The brief names different `SOLUTION.md` parts in constraint 8 (architecture) and in Deliverables (agent skill rationale), so the specs now require the union.
+  - `CLAUDE.md` still referred to a non-existent `PLAN.md` and was missing `riskBandLabel`.
+- **Rejected / corrected:**
+  - The handler reference's placeholder property types (`Detached`, `Semi-detached`, `Terraced`) were rejected as drift from the brief, as flagged in Entry 2.
+  - The agent broke the `angular-signals-component` description on its first edit ("It with signal-based state") and fixed it.
+  - The four-bullet privacy "improvement" was folded into one theme, to match the brief's "one thing".
+  - Operator wording in `tech-stack.md` was brought in line with the skill's `matches` (Entry 7).
+  - Nothing has been compiled or run yet, because there is no code.
+
+## Entry 12: Generated from KB: kb/types.ts
+
+- **When:** 2026-09-27 17:55
+- **Phase / skill:** Phase 1 / `risk-engine` (roadmap "Generate from the KB")
+- **Prompt:** "start phase 1" (the agent derived the types as the roadmap's first "generated from the KB" step)
+- **Output:** `backend/src/kb/types.ts`, derived from `risk-kb.json`. A script listed every key the KB uses:
+  - top level: `version`, `schemaVersion`, `basePremium`, `coverageLoadFactor`, `riskBands`, `coverage`, `factors`
+  - bands: `min`, `max`, `riskMultiplier`, `label`, `summary`
+  - factors: `id`, `description`, `condition`, `points`, `perOccurrence`
+  - leaf conditions: `field`, `operator`, `min`, `max`, `value`
+
+  Each key maps to an interface field; the brief's keys are verbatim and ours are marked `// +`.
+- **What changed:** `backend/src/kb/types.ts` (new)
+- **Why:** The brief asks for code generated from the KB, not just boilerplate (R2), and for a KB schema typed with interfaces (R5 10). The interfaces are the source of truth: `kb/schema.ts` ends in `satisfies z.ZodType<Kb>`, so `tsc` fails if the Zod schema drifts from them.
+- **Rejected / corrected:** A plain `LeafCondition` with named `min`/`max`/`value` fields was not used. Params sit flat on the leaf, as in the brief, and differ per operator, so the leaf has an `unknown` index signature and the registry's Zod schemas define the params. That keeps a new operator to one registry entry. The `all`/`any`/`not` groups and `enabled` are not in the KB yet (Phase 6 adds the compound factor), but they are typed now because the loader and schema must accept them.
+
+## Entry 13: Phase 1: KB, operator registry, schema, loader and quality gates
+
+- **When:** 2026-09-27 17:55
+- **Phase / skill:** Phase 1 / `risk-engine` (plus `lambda-handler`'s `quote/request.ts`, which the loader's field check needs)
+- **Prompt:** "start phase 1"
+- **Output:** The backend scaffold and Phase 1 code:
+  - `package.json` (`start`/`build`/`test`/`typecheck`/`lint`), strict `tsconfig` with `noUncheckedIndexedAccess`, `tsconfig.build.json`, Jest (ts-jest), ESLint flat config
+  - `risk-kb.json`, extending the brief's example
+  - `engine/operators.ts` (10 operators), `engine/template.ts`, `kb/schema.ts`, `kb/loader.ts` (the six checks, cache, `reloadKb`, `KB_PATH`), `quote/request.ts`, `quote/summary-tokens.ts`
+  - specs for operators, template and loader
+
+  Results: `tsc` clean; `npm run lint` clean; `jest` 51/51 passed; `npm run build` emits `dist/`; the numbers, `any`/`switch` and outbound-call greps print nothing. A script comparing the KB with the brief's example prints "removed/changed: none", and the additions are the band `riskMultiplier`/`label`/`summary`, `schemaVersion` and `coverage`. The KB's fields `[age, previousClaims, propertyType, propertyValue]` are all in the request schema.
+- **What changed:** `risk-kb.json`; `backend/` (`package.json`, `package-lock.json`, `tsconfig*.json`, `jest.config.js`, `eslint.config.mjs`, `src/engine/*`, `src/kb/*`, `src/quote/request.ts`, `src/quote/summary-tokens.ts`); `CLAUDE.md` and `risk-engine/SKILL.md` (numbers-check comment filter)
+- **Why:**
+  - R1 25: the registry validates params and rejects unknown operators at load, and bands are ordered by `min`.
+  - R4 15: "KB loaded correctly" means six checks, each naming its JSON path.
+  - R5 10: no `any`, and the Zod schema `satisfies` the interfaces.
+  - Lint rules were tested on a deliberately bad `engine/` file: they flagged `any`, `switch`, `2.2` and `15`.
+  - Decisions not in the specs:
+    - `summaryTokens` lives in `quote/summary-tokens.ts`, as the pattern allows, so the loader doesn't import the Phase 3 service.
+    - `schemaVersion` is checked before the full shape, so a v2 KB gets one clear message.
+    - Two extra load checks: `max >= min` per band, and `perOccurrence` only on a numeric request field.
+- **Rejected / corrected:**
+  - The agent's first `kb/schema.ts` had a meaningless `.check(...) &&` expression and a `key as keyof` cast; it was discarded.
+  - A plain `z.union` for conditions was probed and rejected. Zod 4 reported a bad operator as a bare `"Invalid input"` with no path, which breaks "every error names the JSON path". The node kind is now chosen by key presence from a lookup table, giving `factors.3.condition.all.1.operator: unknown operator "nope"`.
+  - `loader.spec.ts` first used an untyped `JSON.parse` (implicit `any`) and an `as typeof kb.riskBands` cast. Both passed the tests but were replaced with a Zod parse and `Object.fromEntries`.
+  - The numbers check was itself wrong: its comment filter missed `/** */` lines and flagged a doc comment. It was fixed in `CLAUDE.md` and the skill.
+  - Two doc comments quoting the brief's numbers (25, 75) were reworded, so `risk-kb.json` is the only file in `src` with scoring numbers.
+  - Jest `roots` excludes `backend/test/` until Phase 2 creates it.
+  - Tooling versions: Zod 4.6, TypeScript 6.0, Jest 30 with ts-jest 29.4. ts-jest 29 predates Jest 30 but ran cleanly.
+
+## Entry 14: Generated from KB: scenario fixtures
+
+- **When:** 2026-09-27 18:03
+- **Phase / skill:** Phase 2 / `kb-driven-tests` (roadmap "Generate from the KB")
+- **Prompt:** "start phase 2" (the fixtures are the roadmap's Phase 2 "generated from the KB" step)
+- **Output:** `backend/test/scenarios/`: `_base.json` plus one file per factor and `bands.json`, 22 scenarios in all. For each factor, the inputs were derived from its condition: the trigger, both boundaries and a near-miss. `outside_range` 25–75 gets 18/24/25/75/76, `between` 1–2 gets 0/1/2/3, `gte 3` gets 2/3/20, `eq Flat` gets Flat/Bungalow, and `gt 750000` gets 750000/750001. The expected score, band and premium were worked out by hand, with the arithmetic in each `why`. `backend/test/configurability/` holds the brief's three cases (add the flood zone, claims 15 → 20, remove the flat factor) plus the compound "Flat AND > £500k".
+- **What changed:** `backend/test/scenarios/*.json`, `backend/test/configurability/*.json` (new)
+- **Why:** R1 25 asks that adding a factor needs only a KB change; the test side of that is a fixture, not test code, and the coverage check fails if a factor has none. Premiums per band are £360, £540 and £792 (300 × 1.0 / 1.5 / 2.2 × 1.2), so each multiplier is checked. The band boundaries were checked against the real KB by listing every reachable score: 25 and 60 are reachable and asserted; 26 and 61 are not, because all points are multiples of 5. The `why` lines say so, and `band.spec.ts` covers 26 and 61.
+- **Rejected / corrected:** The agent's first draft got one expected value wrong. The `bands.json` case "HIGH_RISK: first reachable score above 60" used 70 and claimed 55 was the next score below it. It missed 2 claims (30) + Flat (10) + £900k (25) = 65. This was caught by re-checking the arithmetic before running anything, then confirmed by listing all reachable scores. The case now asserts 65. Nothing was captured from engine output; the tests passed on their first run, so a mutation run (claims weight 20 plus an unfixtured flood factor in the real KB) was used to prove they can fail.
+
+## Entry 15: Phase 2: risk engine, quote service and KB-driven tests
+
+- **When:** 2026-09-27 18:03
+- **Phase / skill:** Phase 2 / `risk-engine`, then `kb-driven-tests`
+- **Prompt:** "start phase 2"
+- **Output:**
+  - Engine: `engine/evaluate.ts` (recursion over leaf/all/any/not, registry dispatch), `engine/score.ts` (enabled factors, perOccurrence, typed `AppliedFactor[]`), `engine/band.ts` (last band with `min <= score`, clamp and warn), `engine/test-kb.ts`
+  - Brought forward from Phase 3: `quote/response.ts`, `quote/service.ts`
+  - Unit specs for evaluate, score, band and service
+  - Runners `test/scenarios.spec.ts`, `test/configurability.spec.ts`, `test/coverage.spec.ts`, plus `scenario-schema.ts`, `load-fixtures.ts`, `expect-matches.ts`
+
+  Results: `tsc` clean; lint clean; jest 10 suites, 124/124 passed; `npm run build` ships no spec files; the any/switch, numbers, outbound-call and scoring-literal greps print nothing. In the mutation check (claims 15 → 20 plus an unfixtured `flood_zone` in the real KB), exactly the expected 9 tests failed: the 4 claims scenarios, 2 band sums, 2 configurability "before" states, and the coverage check for `flood_zone`. The KB was restored with a 0-line diff.
+- **What changed:** `backend/src/engine/{evaluate,score,band,test-kb}.ts` and their specs; `backend/src/quote/{response,service}.ts`, `service.spec.ts`; `backend/src/quote/request.ts` and `kb/loader.ts` (+ spec) for unscored fields; `backend/test/*.ts`; `backend/jest.config.js` (`test/` root); `specs/roadmap.md` (service moved into Phase 2); `CLAUDE.md` (status)
+- **Why:**
+  - R1 25 and R4 15: the evaluator is generic, with no switch; the brief's three KB-only changes and the compound factor are each proven against the same engine with an in-memory patched KB.
+  - The brief's "Jest tests covering all 3 risk bands (3+ cases)": `bands.json` has 6 cases, with premiums.
+  - Decisions not in the specs, each flagged in the roadmap:
+    - `service.ts` was moved into Phase 2, because the band scenarios check premiums.
+    - `AppliedFactor` lives in `engine/score.ts`, not `quote/response.ts`, so `engine/` never imports `quote/`.
+    - `unscoredFields` in `request.ts` is the one source for fields that are never scored.
+- **Rejected / corrected:**
+  - The pattern's `import { AppliedFactor } from '../quote/response'` in the scorer was rejected, because it inverts the pattern's own dependency direction.
+  - `service.spec` showed the loader accepted a factor on `customerName` that the service then stripped, so the factor would silently never fire; `kb-factor` rejects exactly that. The loader now rejects conditions on unscored fields ("collected but never scored"), with a test.
+  - The first `baseRequest()` helper narrowed with a hand-written `typeof` check; it was replaced with a Zod parse, as the skill requires.
+  - One documented `as` remains, in `configurability.spec.ts` (the typed-lookup idiom for the patch ops). It widens a function type and never touches data.
+  - The wrong fixture value is recorded in Entry 14.
+
+## Entry 16: Phase 3: Lambda-style handler, local server with KB hot reload
+
+- **When:** 2026-09-27 18:23
+- **Phase / skill:** Phase 3 / `lambda-handler`
+- **Prompt:** "start phase 3"
+- **Output:**
+  - `src/http/types.ts` (local API Gateway-shaped types)
+  - `src/handler.ts`: `handler(event, context)` with a `Record<"METHOD /path", fn>` route map, CORS on every response, and 400/404/500 mapping
+  - `src/server.ts`: `node:http` translator; `loadKb()` before listen, which exits 1 with the named error; `fs.watchFile` hot reload with last-good fallback
+  - `backend/requests/{standard,elevated,high-risk}.json`
+  - `src/handler.spec.ts` (12 tests)
+
+  Results: `tsc` clean; lint clean; jest 11 suites, 136/136 passed; the any/switch/framework/AWS and outbound-call greps print nothing. Live on `npm start`:
+  - `/health` returns 200 with `kbVersion` 1.0.0.
+  - `{"age":12}` returns 400 with 6 field issues.
+  - The three samples return 10/STANDARD/£360, 30/ELEVATED/£540 and 85/HIGH_RISK/£792, all hand-computed in advance and matching.
+  - Unknown route → 404; preflight → 204 with CORS.
+  - Hot reload with no restart: Flat 10 → 20 and v1.0.1 took effect; invalid JSON was logged as "reload rejected; last good KB still serving" while quotes kept returning v1.0.1; the revert brought back 1.0.0 with a 0-line KB diff.
+  - A bad `KB_PATH` exits 1 with `factors.0.condition.operator: unknown operator "regex"`, and `node dist/server.js` serves `/health`.
+- **What changed:** `backend/src/{http/types,handler,server,handler.spec}.ts`, `backend/requests/*.json` (new); `CLAUDE.md` (status)
+- **Why:**
+  - R4 15: clean handler export and a table-driven route map; CORS on every status.
+  - Constraint 5 and "no internals": a 500 carries only `{ error, requestId }`, and the loader's detail goes to stderr (the spec asserts `regex` is absent from the body).
+  - Constraint 6: `npm start` alone runs it.
+  - R6 10: hot reload is what lets the live demo change the KB with no restart.
+  - The 500 test uses `jest.spyOn(loader, 'loadKb')` instead of `KB_PATH` plus `jest.isolateModules`. Re-requiring through isolateModules returns `any`, or needs dynamic `import()`, which ts-jest's CommonJS mode doesn't intercept. The spy is typed and was shown to take effect: without it the response would have been 200.
+- **Rejected / corrected:**
+  - Three details of the pattern were changed. Its 404 body echoed the caller's method and path; it is now a fixed `"Not found"`, so no input is reflected. An issue with an empty path now reports `(body)` instead of `""`. `server.ts` now catches the startup error and prints only the loader's message with exit code 1, instead of an uncaught stack trace.
+  - The agent's first background `npm start` failed: it ran in the repo root, with no `package.json`, because the `cd` didn't carry over. It was rerun as `npm --prefix backend start`, the form the README will use.
+  - Nothing from the reject table appeared in the first draft.
+
+## Entry 17: Generated from backend contract: frontend models/quote.ts
+
+- **When:** 2026-09-27 18:35
+- **Phase / skill:** Phase 4 / `angular-signals-component` (roadmap "Generate from the backend contract")
+- **Prompt:** "start phase 4" (the model is the roadmap's Phase 4 "generated from the backend contract" step)
+- **Output:** `frontend/src/app/models/quote.ts`, derived field by field from:
+  - `backend/src/quote/request.ts` (the Zod schema and the `propertyTypes` enum)
+  - `quote/response.ts` and `engine/score.ts` (`AppliedFactor`)
+  - `handler.ts` (the 400/404/500 error bodies)
+
+  The form validators in `quote/quote-form.ts` mirror the Zod rules one to one, and `quote-form.spec.ts` has a row per rule.
+- **What changed:** `frontend/src/app/models/quote.ts`, `frontend/src/app/quote/quote-form.ts` (new)
+- **Why:** The brief asks for code generated from the source of truth, not boilerplate (R2). The frontend has no shared types package (tech-stack decision), so this derivation, together with the validator spec, is how drift is caught. `riskBand` stays a `string`, not a union, so a new KB band needs no frontend change (R1).
+- **Rejected / corrected:** The drift was between the skill's own reference and the real backend; the backend won in each case, and a test pins each one:
+  - Response types are `readonly`; the reference's were mutable.
+  - `propertyValue` used `Validators.min(1)`, but Zod `positive()` accepts anything above 0 (e.g. £0.50). There is now a `positive` validator.
+  - `customerName` used `Validators.required`, which accepts `"   "`, but Zod trims before `min(1)`. There is now a `notBlank` validator.
+  - Whole numbers used `Validators.pattern(/^\d+$/)` on number controls, which relies on string coercion. There is now an `integer` validator, matching `.int()`.
+  - The reference's `ReadonlyArray<…>` was changed to `readonly …[]` for lint.
+
+## Entry 18: Phase 4: Angular scaffold, reactive form and signal state
+
+- **When:** 2026-09-27 18:35
+- **Phase / skill:** Phase 4 / `angular-signals-component` (with `angular-new-app`'s steps, overridden where the brief differs), then `claude-in-chrome` for the browser check
+- **Prompt:** "start phase 4"
+- **Output:**
+  - `frontend/` scaffolded with `npx @angular/cli@latest new` (Angular 22.2, TypeScript 6.0, Vitest 5): `--style=css --ssr=false --zoneless --ai-config=none`, `@angular/router` removed, `angular-eslint` added
+  - `proxy.conf.json`, wired into `angular.json` serve options
+  - `QuoteService` (HttpClient → Observable)
+  - `QuotePageComponent`: exactly three writable signals (`loading`, `quoteResult`, `errorMessage`); `canSubmit` and `announcement` as `computed()` over `toSignal(statusChanges)`; one `effect()` that only moves focus via `afterNextRender`; one `takeUntilDestroyed` subscription per submit; narrowed error bodies
+  - Six labelled fields with `aria-invalid` and `aria-describedby` errors
+  - Hand-written CSS tokens with dark mode
+  - Specs: app, form (a row per Zod rule) and page signal transitions with `HttpTestingController`
+
+  Results: `ng build` OK (65.8 kB transferred); `ng test` 3 files, 26/26 passed; `ng lint` passes; the Subject/any/NgModule/@Input, effect-write, missing-OnPush, UI-library and zone.js greps print nothing.
+
+  In Chrome against the running backend:
+  - Age 12 shows an inline error with the button disabled.
+  - The three samples render 10/STANDARD/£30/£360, 30/ELEVATED/£45/£540 and 85/HIGH RISK/£66/£792.
+  - During each submit the button is disabled, `aria-busy="true"` and "Getting your quote…"; focus then moves to `#result-heading` and the `aria-live` region announces the band and premium.
+  - With the backend stopped, the proxy's 502 shows "We couldn't get a quote right now", clears the old result and re-enables the button.
+- **What changed:** `frontend/` (new); `CLAUDE.md` (status)
+- **Why:**
+  - R3 20: each signal primitive has one job.
+  - Constraints 1, 4 and 6: no Subjects (enforced by a lint rule), own CSS, and `npm start` serves the app with the proxy.
+  - The results panel is deliberately minimal (label, premiums, summary); Phase 5 moves it into `QuoteResultComponent` with the badge and factor rows.
+- **Rejected / corrected:**
+  - `angular-new-app`'s defaults were overridden: no global CLI install, no Tailwind, and `--ai-config=none` rather than "prefer agents", which would have written a second agent config into `frontend/`.
+  - The scaffold's `tsconfig.json` had no `strict: true` and no `strictTemplates`; both were added.
+  - The agent's first form spec used `setValue(value as never)`, a cast on form values that the skill's reject table forbids. It was rewritten with a typed setter per row. A leftover `as HTMLElement` in the page spec became `querySelector<HTMLButtonElement>`.
+  - Lint flagged `ReadonlyArray<T>`, which was fixed.
+  - A lint probe showed `prefer-on-push-component-change-detection` did not fire on a component without `changeDetection` under Angular 22 (cause not investigated). The OnPush grep gate still catches it, and every component sets OnPush explicitly.
+  - Node 25 is outside the Angular CLI's supported range (`^22 || ^24 || >=26`) and produced warnings only. The README should recommend Node 22 or 24 LTS.
+  - A browser-check script hung because it awaited `requestAnimationFrame` in a background tab; it was replaced with timer waits.
+  - A backend 400 can't be triggered from the UI, because the validators block exactly what Zod rejects. That path is covered by the unit test, not the browser.
+
+## Entry 19: Phase 5: results UI, risk band badge and KB-driven factor rendering
+
+- **When:** 2026-09-27 18:45
+- **Phase / skill:** Phase 5 / `angular-signals-component`, then `claude-in-chrome` for the browser check
+- **Prompt:** "start phase 5"
+- **Output:**
+  - `RiskBandBadgeComponent`: `riskBand = input.required<string>()` and `label = input<string>()`; the text is `label() ?? riskBand()`, and the colour comes from a host `data-band` attribute with a neutral fallback plus a dot, so colour is never the only signal
+  - `QuoteResultComponent`: `input.required<QuoteResponse>()` and `computed()` for £ formatting, sorted factors, total and a totals-agree check; `@for` over `appliedFactors` showing each KB `description`, `× occurrences` and `+points`; KB summary verbatim; a premium breakdown in `<details>`; `kbVersion`
+  - Page: loading skeleton, empty state and error state
+  - Badge colours for light and dark mode, all pairs checked by script at ≥ 6.54:1 contrast (WCAG AA is 4.5:1)
+  - Specs: badge (3 KB bands, an unknown band, input change) and result (premiums, badge and summary pass-through, factor rows sorted, a factor the code has never seen, no factors, mismatch, breakdown)
+
+  Results: `ng build` OK (64.4 kB transferred); `ng test` 5 files, 38/38 passed; `ng lint` passes; backend 136/136 still pass; all frontend greps print nothing, including a new one: no band ids, band labels or factor ids in frontend `.ts`/`.html` outside specs; band ids appear only in the badge's CSS.
+
+  In Chrome, the three samples rendered as follows:
+  - standard: £30.00 / £360.00, STANDARD, one row "Flat — higher shared risk +10"
+  - elevated: £45.00 / £540.00, ELEVATED, "1–2 previous claims × 2 +30"
+  - high risk: £66.00 / £792.00, HIGH RISK, four rows sorted 30/25/20/10, total 85
+
+  With `flood_zone` (+15, `starts_with` EX/PL, v1.1.0) added to `risk-kb.json` on the running server, resubmitting the same form showed a fifth row "Property in a flood-risk postcode area +15", total 100, "Rules version 1.1.0". Only `risk-kb.json` changed, and it was reverted to a 0-line diff. At 390px width (measured in an iframe) the form is one column, with no horizontal scroll.
+- **What changed:** `frontend/src/app/risk-band-badge/*` (new); `frontend/src/app/quote/quote-result.component.*` (new); `quote-page.component.{ts,html,css}` (uses the result component; loading, empty and error states; `CurrencyPipe` removed); `frontend/src/styles.css` (`--surface-sunken`); `CLAUDE.md` (status)
+- **Why:**
+  - R3 20: `input()`, `computed()` and a presentational component with no writable state.
+  - R1 25: the brief's "UI reflects `appliedFactors` from the KB" is proven twice, by a spec rendering an unknown factor and by the live flood-zone edit.
+  - Constraint 4: every style is hand-written.
+  - Decisions not in the specs: the premium breakdown (`coverageDetails`) is collapsed by default; if the factor total ever differs from `riskScore`, the UI shows `riskScore` and a visible note rather than hiding it; the reference's `role="status"` on the badge was dropped, because the page's `aria-live` region already announces the result, and a second live region would announce the band twice.
+- **Rejected / corrected:**
+  - The agent's first result spec had 3 failing assertions. They compared `textContent` across sibling elements, and Angular strips inter-element whitespace ("score90"), while the visible spacing comes from flex gaps. The component was right and the tests were wrong; they now assert on individual elements.
+  - A doc comment in the badge quoting "HIGH RISK" tripped the new wording gate; it was reworded.
+  - `resize_window` did not change the viewport (it stayed 2516px), and the agent did not retry it; phone width was measured in a 390px iframe instead.
+  - The agent's first command to stop the servers used invalid `lsof` syntax, so it silently didn't stop them. This was caught by a follow-up check and fixed.

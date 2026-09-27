@@ -11,9 +11,10 @@ This skill covers the protocol layer only. Scoring lives in `quote/service.ts` a
 
 ## Before you write code
 
-1. Read `references/handler-pattern.md` and copy its shape: local event/result types, route map, response envelope, adapter, spec.
-2. Read `risk-kb.json`. The request schema's field names must match the `condition.field` values the factors use (the reference has a one-liner that lists them). If a factor reads a field the schema lacks, the factor can never fire.
-3. Check the six form fields and property-type options against the spec. Keep `frontend/src/app/models/quote.ts` and the form validators in step with `quote/request.ts`.
+1. Read the specs: `specs/tech-stack.md` "Backend" (the request contract table, "Loading the KB correctly", the API table) and "Containers"; `specs/roadmap.md` Phase 3 and Phase 7 with their "Done when" checks.
+2. Read `references/handler-pattern.md` and copy its shape: local event/result types, route map, response envelope, adapter with hot reload, spec, Dockerfile.
+3. Read `risk-kb.json`. The request schema's field names must match the `condition.field` values the factors use (the reference has a one-liner that lists them). If a factor reads a field the schema lacks, the loader rejects the KB.
+4. The request is exactly the brief's six form fields: `customerName`, `age`, `propertyType` (`House` / `Flat` / `Bungalow` only), `propertyValue`, `postcode`, `previousClaims` (last 5 years). Keep `frontend/src/app/models/quote.ts` and the form validators in step with `quote/request.ts`.
 
 ## Rules
 
@@ -23,7 +24,10 @@ This skill covers the protocol layer only. Scoring lives in `quote/service.ts` a
 - `server.ts` only translates between HTTP and events. No routing, no validation and no framework: no Express, Fastify, Koa or Hono.
 - Every response gets the CORS headers, including 400, 404 and 500.
 - A KB failure is a 500 with a generic message and a `requestId`. Log the detail to stderr, never into the response body. `server.ts` calls `loadKb()` before it listens, so a bad KB fails at startup.
-- `npm start` runs `tsx src/server.ts` on `PORT` (default 3000). The frontend proxy expects `/policy` and `/health` on that port.
+- `POST /policy/quote` is the brief's single business endpoint. `GET /health` (returns `kbVersion`) is a supporting endpoint, kept by decision. Don't add other routes.
+- **KB hot reload:** `server.ts` watches `kbPath()` with `fs.watchFile` (stat polling, so it also works across Docker bind mounts) and calls `reloadKb()`. A valid edit swaps in atomically; an invalid one is logged and the last good KB keeps serving.
+- **No outbound calls.** The backend never calls an LLM or any external API, and the KB is only ever read from the local file at `KB_PATH` (brief constraint 5). No `fetch`, `http.request`, `axios` or SDK clients in `backend/src`.
+- `npm start` runs `tsx src/server.ts` on `PORT` (default 3000). It is the one command that starts the backend (brief constraint 6). The frontend proxy expects `/policy` and `/health` on that port.
 
 ## Reject these outputs
 
@@ -35,6 +39,10 @@ This skill covers the protocol layer only. Scoring lives in `quote/service.ts` a
 | Premium or band maths in `handler.ts` | business logic in the transport layer, and hides it from engine tests |
 | `@types/aws-lambda` or `aws-sdk` added as a dependency | there is no AWS here; local structural types are enough |
 | `err.message` or a stack trace in a 500 body | leaks internals |
+| Property types other than `House` / `Flat` / `Bungalow`, or a request without `customerName` | drifts from the brief's form; KB factors on `propertyType` stop matching |
+| `fetch`, `axios`, an LLM/SDK client, or loading the KB from a URL | the brief's constraint 5: deterministic, self-contained, local KB file |
+| Restarting the server to pick up a KB edit, or a single-file KB bind mount in compose | breaks the live demo's hot reload |
+| Dockerfile running as root, without `HEALTHCHECK`, or with `tsx` in the runtime image | not the Fargate-ready image `tech-stack.md` specifies |
 
 ## Definition of done
 
@@ -43,7 +51,9 @@ Run all of these and report the output. Don't claim success without it.
 ```bash
 cd backend && npx tsc --noEmit
 cd backend && npx jest src/handler.spec.ts
-grep -nE ':\s*any\b|as any|switch\s*\(|express|fastify' backend/src/handler.ts backend/src/server.ts backend/src/quote/request.ts   # must print nothing
+cd backend && npm run lint
+grep -nE ':\s*any\b|as any|switch\s*\(|express|fastify|koa|hono|aws-lambda|aws-sdk' backend/src/handler.ts backend/src/server.ts backend/src/quote/request.ts backend/package.json   # must print nothing
+grep -rnE 'fetch\(|https?\.request|axios|openai|anthropic' backend/src                                    # must print nothing (constraint 5)
 ```
 
 Then, with `cd backend && npm start` running:
@@ -51,7 +61,9 @@ Then, with `cd backend && npm start` running:
 ```bash
 curl -s localhost:3000/health                                                # 200, kbVersion present
 curl -s -XPOST localhost:3000/policy/quote -H 'Content-Type: application/json' -d '{"age":12}'   # 400 with issues[]
-curl -s -XPOST localhost:3000/policy/quote -H 'Content-Type: application/json' -d @<valid.json>   # 200, full shape + kbVersion
+curl -s -XPOST localhost:3000/policy/quote -H 'Content-Type: application/json' -d @backend/requests/standard.json   # 200, full shape + kbVersion
 ```
+
+Repeat the last call for `elevated.json` and `high-risk.json`. Then, without restarting, edit a factor's `points` in `risk-kb.json`: the next quote changes. Save invalid JSON: the reload is logged as rejected and quotes keep working. Revert the edit.
 
 Finish with an `agent-log` entry, and record anything from the reject table that the first draft contained.

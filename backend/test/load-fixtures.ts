@@ -1,0 +1,25 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { z } from 'zod';
+
+export const testDir = __dirname;
+export const realKbPath = join(testDir, '..', '..', 'risk-kb.json');
+
+export const readJson = (path: string): unknown => JSON.parse(readFileSync(path, 'utf8')) as unknown;
+
+/** Parses every non-underscore JSON file in a fixture directory; a malformed file fails with its name and path. */
+export const loadDir = <S extends z.ZodType>(dir: string, schema: S): Array<{ file: string; data: z.output<S> }> =>
+  readdirSync(join(testDir, dir))
+    .filter((f) => f.endsWith('.json') && !f.startsWith('_'))
+    .sort()
+    .map((file) => {
+      const parsed = schema.safeParse(readJson(join(testDir, dir, file)));
+      if (!parsed.success) {
+        throw new Error(`${dir}/${file}: ${parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')}`);
+      }
+      return { file, data: parsed.data };
+    });
+
+/** `_base.json` merged with a scenario's overrides, parsed with the real request schema (so transforms apply). */
+export const baseRequest = (): Record<string, unknown> =>
+  z.record(z.string(), z.unknown()).parse(readJson(join(testDir, 'scenarios', '_base.json')));

@@ -44,7 +44,7 @@ Every phase follows the same loop, so the log shows intentional engineering:
 **Done when:** the repo is committed, the skills match `specs/`, and the log entry records what the agent drafted and what was corrected.
 
 ## Phase 1: KB schema, loader and quality gates (R1, R5)
-- Backend scaffold: `package.json`, strict `tsconfig` (`noUncheckedIndexedAccess`), Jest, and ESLint with `no-explicit-any` and the `SwitchStatement` ban.
+- Backend scaffold: `package.json`, strict `tsconfig` (`noUncheckedIndexedAccess`), Jest, and ESLint with `no-explicit-any`, the `SwitchStatement` ban and `no-magic-numbers` (ignoring `0` and `1`) in `engine/`.
 - Write `risk-kb.json` at the root **by extending the brief's example verbatim**:
   - Keep all five factors with their exact `id`, `description`, `condition`, `points` and `perOccurrence`.
   - Keep `riskBands` as an object with min/max, including `999`.
@@ -81,6 +81,8 @@ Every phase follows the same loop, so the log shows intentional engineering:
 
     Each changes the result, and no engine file changes.
 
+- **Brought forward from Phase 3** (done in Phase 2, log #15): `quote/response.ts` and `quote/service.ts` (`getQuote`). The scenario runners need the premium, so each band's multiplier is checked in Phase 2. Both are pure and owned by `risk-engine`. `AppliedFactor` lives in `engine/score.ts` and is re-exported by `quote/response.ts`, so `engine/` never imports `quote/`.
+
 **Done when:** all engine tests pass, `lint` shows no `switch`, and the no-numbers grep over `engine/` is clean.
 
 ## Phase 3: Quote service, handler and local server (R4, R6)
@@ -92,7 +94,7 @@ Every phase follows the same loop, so the log shows intentional engineering:
   - `postcode`: trimmed and upper-cased.
   - `previousClaims`: in the last 5 years.
 - The loader checks that every KB `condition.field` exists in this schema.
-- `quote/response.ts`: the `QuoteResponse`, `AppliedFactor` and `CoverageDetails` interfaces.
+- `quote/response.ts` and `quote/service.ts` were built in Phase 2 (see there). Phase 3 only confirms the handler returns their output unchanged:
 - `quote/service.ts`:
   - `annualPremium = basePremium × riskMultiplier × coverageLoadFactor`, and `monthlyPremium = annual / 12`, rounded only at the response boundary.
   - `riskSummary` from the band template.
@@ -110,7 +112,7 @@ Every phase follows the same loop, so the log shows intentional engineering:
 - An invalid edit keeps the last good KB serving.
 
 ## Phase 4: Angular scaffold, form and signal state (R3)
-- Scaffold `frontend/` with the latest CLI via `npx`: Angular 17+, standalone only (no NgModules), zoneless, OnPush, and no UI library. Add the ESLint `no-explicit-any` rule.
+- Scaffold `frontend/` with the latest CLI via `npx` (no global install): Angular 17+, standalone only (no NgModules), zoneless, OnPush, plain CSS, and no UI library. Skip `angular-new-app`'s Tailwind step. Add the ESLint `no-explicit-any` rule.
 - `proxy.conf.json` wired into `angular.json`, so `npm start` alone serves the app with `/policy` and `/health` proxied to :3000.
 - Write the `angular-signals-component` skill before building the components, and use it for them.
 - **Generate from the backend contract:** the agent derives `models/quote.ts` from `quote/request.ts` and `quote/response.ts`, and the log records any drift it finds.
@@ -189,10 +191,10 @@ Every phase follows the same loop, so the log shows intentional engineering:
   - The KB file location.
   - How to add a factor.
   - The KB versioning section.
-- `SOLUTION.md` (≤ 300 words): re-check its three parts against the real implementation: KB schema decisions, the agent skill rationale, and one improvement (data privacy protection).
+- `SOLUTION.md` (≤ 300 words): re-check its four parts against the real implementation: architecture decisions, KB schema decisions, the agent skill rationale, and one improvement (data privacy protection). Add what the build actually delivered (hot reload, Docker) within the word limit.
 - **Rubric self-audit:** walk through R1–R6 and the coverage matrix below against the running app and the code. Fix gaps before polishing.
 - **AGENT_LOG review:** confirm it is chronological and each entry records prompt → output → change → why, with real rejections. Don't rewrite past entries; add corrections as new ones.
-- Final gates: `tsc`, `lint` and tests in both packages, plus `docker compose up --build` with both containers healthy. Grep for `any`, `switch`, `BehaviorSubject` and numbers in `engine/`.
+- Final gates: `tsc`, `lint` and tests in both packages, plus `docker compose up --build` with both containers healthy. Grep for `any`, `switch`, `BehaviorSubject`, numbers in `engine/`, outbound calls in `backend/src` and UI libraries in `frontend/package.json`.
 - **Q&A prep:** short answers on the skill rationale, the rejected outputs, compound conditions, and versioned rule sets in production.
 - Push to a public GitHub repo, then check that a fresh clone runs with the 4 README commands **and** with `docker compose up --build`.
 
@@ -236,11 +238,11 @@ Each line of the brief maps to the phase that delivers it and the check that pro
 | 1. Signals, no BehaviorSubject/Subject for UI state | 4, 5 | Grep |
 | 2. `handler(event, context)` export | 3 | Spec |
 | 3. KB-driven, no hardcoded scoring values | 1, 2 | Grep, lint |
-| 4. No external UI libraries | 4, 5 | `package.json` review |
-| 5. No LLM or external API calls; KB is a local file | 1, 3 | No network code, `KB_PATH` is a file |
+| 4. No external UI libraries; own CSS | 4, 5 | `package.json` grep, hand-written CSS |
+| 5. No LLM or external API calls; KB is a local file | 1, 3 | Outbound-call grep over `backend/src`, `KB_PATH` is a file |
 | 6. Single `npm start` per service | 3, 4 | README commands (Docker is an extra path, not a replacement) |
 | 7. AGENT_LOG.md | all | Log |
-| 8. SOLUTION.md ≤ 300 words | 8 | `wc -w` |
+| 8. SOLUTION.md ≤ 300 words: architecture decisions, KB design choices, agent skill rationale (Deliverables), one improvement | 0, 8 | `wc -w`, four sections present |
 | **Bonus (chosen)** | | |
 | KB versioning: `version` in the API response, breaking schema changes without redeploy | 3, 6 | `kbVersion` in the response, schema-gate test, README section |
 | Compound AND/OR conditions | 2, 6 | Evaluator tests, `compound.json` |
