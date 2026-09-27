@@ -2,6 +2,23 @@
 
 A single-page home insurance quote tool: an Angular frontend, a Lambda-style Node.js backend, and a risk engine whose rules live entirely in a JSON Knowledge Base, **[`risk-kb.json`](risk-kb.json) at the repo root**. Adding, changing or removing a risk factor is a KB edit, with no code change.
 
+## What it looks like
+
+<p align="center">
+  <img src="images/quote-high-risk-uk.png" width="420"
+       alt="The PolicyQuote page: a quote form for a £380,000 house at SW1A 1AA with 3 previous claims, and the result: £66.00 a month, £792.00 a year, a HIGH RISK badge, one applied factor '3 or more previous claims × 3, +90', the premium breakdown and 'Rules version 1.3.0'.">
+</p>
+
+A customer fills in the six fields from the brief and gets a quote. The example above is a £380,000 house in London (`SW1A 1AA`) with 3 previous claims in the last 5 years:
+
+- **Currency follows the postcode.** A UK postcode shows £ throughout, including in the property value field while it is being typed. An Irish Eircode would show €.
+- **The risk comes from the KB.** The only factor that matches is `previous_claims_high`, "3 or more previous claims". It is a `perOccurrence` factor, so it scores 30 points **× 3** claims = **90**, shown as one row with its points.
+- **The band comes from the KB.** 90 is in the `HIGH_RISK` range (61+), so the badge shows the KB's label, "HIGH RISK", and the summary is that band's template filled in with the score and factor count.
+- **The premium follows the brief's formula.** "How this premium is calculated" shows the inputs: base premium £300 × risk multiplier 2.2 (HIGH_RISK) × coverage load factor 1.2 = **£792.00 a year**, **£66.00 a month**.
+- **Every quote records its rules.** "Rules version 1.3.0" is the KB `version` that priced it, so a quote can always be traced back to the rule set in force.
+
+None of the wording on the result (the factor text, badge label or summary) is in the frontend code: it all arrives in the API response from `risk-kb.json`, so a new factor appears here with no frontend change.
+
 ## Run it (1 command)
 
 Requires Node.js 22 or 24 LTS.
@@ -242,6 +259,7 @@ backend/
   Dockerfile        multi-stage, non-root image with a HEALTHCHECK
 frontend/           Angular 22 standalone app: signals, Reactive Forms, hand-written CSS, Dockerfile + nginx.conf
 docker-compose.yml  the whole app on :8080 with the KB mounted live
+images/             screenshots used in this README
 package.json        root npm start: runs both services via scripts/start.mjs (no dependencies)
 specs/              mission, tech stack, roadmap, review prep
 CLAUDE.md, .claude/ agent instructions and project skills
