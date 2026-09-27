@@ -17,3 +17,6 @@ export const quoteRequestSchema = z.object({
 });
 
 export type QuoteRequest = z.infer<typeof quoteRequestSchema>;
+
+/** Request fields that are collected but never scored. The loader rejects KB conditions on them; the service strips them. */
+export const unscoredFields: ReadonlySet<string> = new Set<keyof QuoteRequest>(['customerName']);

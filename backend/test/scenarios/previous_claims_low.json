@@ -1,0 +1,26 @@
+[
+  {
+    "name": "0 claims is below the range",
+    "request": { "previousClaims": 0 },
+    "expect": { "riskScore": 0, "riskBand": "STANDARD", "appliedFactorIds": [] },
+    "why": "between 1–2 is inclusive; 0 < 1 → no factor; 0 → STANDARD"
+  },
+  {
+    "name": "1 claim scores once",
+    "request": { "previousClaims": 1 },
+    "expect": { "riskScore": 15, "riskBand": "STANDARD", "appliedFactorIds": ["previous_claims_low"], "annualPremium": 360 },
+    "why": "between 1–2 matches; perOccurrence 15 × 1 = 15 → STANDARD (0–25); 300 × 1.0 × 1.2 = 360"
+  },
+  {
+    "name": "2 claims score per occurrence",
+    "request": { "previousClaims": 2 },
+    "expect": { "riskScore": 30, "riskBand": "ELEVATED", "appliedFactorIds": ["previous_claims_low"], "annualPremium": 540, "monthlyPremium": 45 },
+    "why": "between 1–2 matches; perOccurrence 15 × 2 = 30 → ELEVATED (26–60); 300 × 1.5 × 1.2 = 540; / 12 = 45"
+  },
+  {
+    "name": "3 claims are above the range (the high-claims factor applies instead)",
+    "request": { "previousClaims": 3 },
+    "expect": { "riskScore": 90, "riskBand": "HIGH_RISK", "appliedFactorIds": ["previous_claims_high"] },
+    "why": "3 > 2 → previous_claims_low does not match; gte 3 matches previous_claims_high: 30 × 3 = 90 → HIGH_RISK (61+)"
+  }
+]

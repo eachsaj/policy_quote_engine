@@ -1,0 +1,38 @@
+[
+  {
+    "name": "STANDARD: the base request scores 0",
+    "request": {},
+    "expect": { "riskScore": 0, "riskBand": "STANDARD", "appliedFactorIds": [], "annualPremium": 360, "monthlyPremium": 30 },
+    "why": "no factor matches age 40, House, £250k, 0 claims → 0 → STANDARD (0–25); 300 × 1.0 × 1.2 = 360; / 12 = 30"
+  },
+  {
+    "name": "STANDARD upper boundary: exactly 25",
+    "request": { "propertyValue": 800000 },
+    "expect": { "riskScore": 25, "riskBand": "STANDARD", "appliedFactorIds": ["property_value_high"], "annualPremium": 360 },
+    "why": "800000 > 750000 → 25 = STANDARD.max → STANDARD; 360. 26 is unreachable on the real KB (every factor scores a multiple of 5); band.spec covers 26"
+  },
+  {
+    "name": "ELEVATED: Flat, age 22",
+    "request": { "propertyType": "Flat", "age": 22 },
+    "expect": { "riskScore": 30, "riskBand": "ELEVATED", "appliedFactorIds": ["property_type_flat", "age_young_elderly"], "annualPremium": 540, "monthlyPremium": 45 },
+    "why": "Flat +10, 22 < 25 +20 → 30 → ELEVATED (26–60); 300 × 1.5 × 1.2 = 540; / 12 = 45"
+  },
+  {
+    "name": "ELEVATED upper boundary: exactly 60",
+    "request": { "age": 80, "previousClaims": 2, "propertyType": "Flat" },
+    "expect": { "riskScore": 60, "riskBand": "ELEVATED", "appliedFactorIds": ["age_young_elderly", "previous_claims_low", "property_type_flat"], "annualPremium": 540 },
+    "why": "80 > 75 +20, 15 × 2 = 30, Flat +10 → 60 = ELEVATED.max → ELEVATED; 540. 61 is unreachable on the real KB (multiples of 5); band.spec covers 61"
+  },
+  {
+    "name": "HIGH_RISK: every factor type at once",
+    "request": { "age": 80, "previousClaims": 2, "propertyType": "Flat", "propertyValue": 900000 },
+    "expect": { "riskScore": 85, "riskBand": "HIGH_RISK", "appliedFactorIds": ["age_young_elderly", "previous_claims_low", "property_type_flat", "property_value_high"], "annualPremium": 792, "monthlyPremium": 66 },
+    "why": "20 + 15 × 2 + 10 + 25 = 85 → HIGH_RISK (61+); 300 × 2.2 × 1.2 = 792; / 12 = 66"
+  },
+  {
+    "name": "HIGH_RISK: lowest reachable score above 60",
+    "request": { "previousClaims": 2, "propertyType": "Flat", "propertyValue": 900000 },
+    "expect": { "riskScore": 65, "riskBand": "HIGH_RISK", "appliedFactorIds": ["previous_claims_low", "property_type_flat", "property_value_high"], "annualPremium": 792 },
+    "why": "15 × 2 + 10 + 25 = 65 → HIGH_RISK (61+); all points are multiples of 5, so 65 is the lowest reachable score above 60; 300 × 2.2 × 1.2 = 792"
+  }
+]

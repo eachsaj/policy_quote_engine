@@ -1,0 +1,32 @@
+[
+  {
+    "name": "age 24 is under 25",
+    "request": { "age": 24 },
+    "expect": { "riskScore": 20, "riskBand": "STANDARD", "appliedFactorIds": ["age_young_elderly"], "annualPremium": 360, "monthlyPremium": 30 },
+    "why": "outside_range 25–75 is exclusive: 24 < 25 → +20; 20 → STANDARD (0–25); 300 × 1.0 × 1.2 = 360; / 12 = 30"
+  },
+  {
+    "name": "age 25 is the lower boundary and does not match",
+    "request": { "age": 25 },
+    "expect": { "riskScore": 0, "riskBand": "STANDARD", "appliedFactorIds": [] },
+    "why": "25 is not < 25 and not > 75 → no factor; 0 → STANDARD"
+  },
+  {
+    "name": "age 75 is the upper boundary and does not match",
+    "request": { "age": 75 },
+    "expect": { "riskScore": 0, "riskBand": "STANDARD", "appliedFactorIds": [] },
+    "why": "75 is not > 75 → no factor; 0 → STANDARD"
+  },
+  {
+    "name": "age 76 is over 75",
+    "request": { "age": 76 },
+    "expect": { "riskScore": 20, "riskBand": "STANDARD", "appliedFactorIds": ["age_young_elderly"] },
+    "why": "76 > 75 → +20; 20 → STANDARD"
+  },
+  {
+    "name": "age 18, the youngest the request allows",
+    "request": { "age": 18 },
+    "expect": { "riskScore": 20, "riskBand": "STANDARD", "appliedFactorIds": ["age_young_elderly"] },
+    "why": "18 < 25 → +20; 20 → STANDARD"
+  }
+]

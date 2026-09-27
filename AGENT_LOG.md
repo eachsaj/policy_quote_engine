@@ -209,3 +209,40 @@ Chronological record of significant agent interactions while building PolicyQuot
   - Two doc comments quoting the brief's numbers (25, 75) were reworded, so `risk-kb.json` is the only file in `src` with scoring numbers.
   - Jest `roots` excludes `backend/test/` until Phase 2 creates it.
   - Tooling versions: Zod 4.6, TypeScript 6.0, Jest 30 with ts-jest 29.4. ts-jest 29 predates Jest 30 but ran cleanly.
+
+## Entry 14: Generated from KB: scenario fixtures
+
+- **When:** 2026-09-27 18:03
+- **Phase / skill:** Phase 2 / `kb-driven-tests` (roadmap "Generate from the KB")
+- **Prompt:** "start phase 2" (the fixtures are the roadmap's Phase 2 "generated from the KB" step)
+- **Output:** `backend/test/scenarios/`: `_base.json` plus one file per factor and `bands.json`, 22 scenarios in all. For each factor, the inputs were derived from its condition: the trigger, both boundaries and a near-miss. `outside_range` 25–75 gets 18/24/25/75/76, `between` 1–2 gets 0/1/2/3, `gte 3` gets 2/3/20, `eq Flat` gets Flat/Bungalow, and `gt 750000` gets 750000/750001. The expected score, band and premium were worked out by hand, with the arithmetic in each `why`. `backend/test/configurability/` holds the brief's three cases (add the flood zone, claims 15 → 20, remove the flat factor) plus the compound "Flat AND > £500k".
+- **What changed:** `backend/test/scenarios/*.json`, `backend/test/configurability/*.json` (new)
+- **Why:** R1 25 asks that adding a factor needs only a KB change; the test side of that is a fixture, not test code, and the coverage check fails if a factor has none. Premiums per band are £360, £540 and £792 (300 × 1.0 / 1.5 / 2.2 × 1.2), so each multiplier is checked. The band boundaries were checked against the real KB by listing every reachable score: 25 and 60 are reachable and asserted; 26 and 61 are not, because all points are multiples of 5. The `why` lines say so, and `band.spec.ts` covers 26 and 61.
+- **Rejected / corrected:** The agent's first draft got one expected value wrong. The `bands.json` case "HIGH_RISK: first reachable score above 60" used 70 and claimed 55 was the next score below it. It missed 2 claims (30) + Flat (10) + £900k (25) = 65. This was caught by re-checking the arithmetic before running anything, then confirmed by listing all reachable scores. The case now asserts 65. Nothing was captured from engine output; the tests passed on their first run, so a mutation run (claims weight 20 plus an unfixtured flood factor in the real KB) was used to prove they can fail.
+
+## Entry 15: Phase 2: risk engine, quote service and KB-driven tests
+
+- **When:** 2026-09-27 18:03
+- **Phase / skill:** Phase 2 / `risk-engine`, then `kb-driven-tests`
+- **Prompt:** "start phase 2"
+- **Output:**
+  - Engine: `engine/evaluate.ts` (recursion over leaf/all/any/not, registry dispatch), `engine/score.ts` (enabled factors, perOccurrence, typed `AppliedFactor[]`), `engine/band.ts` (last band with `min <= score`, clamp and warn), `engine/test-kb.ts`
+  - Brought forward from Phase 3: `quote/response.ts`, `quote/service.ts`
+  - Unit specs for evaluate, score, band and service
+  - Runners `test/scenarios.spec.ts`, `test/configurability.spec.ts`, `test/coverage.spec.ts`, plus `scenario-schema.ts`, `load-fixtures.ts`, `expect-matches.ts`
+
+  Results: `tsc` clean; lint clean; jest 10 suites, 124/124 passed; `npm run build` ships no spec files; the any/switch, numbers, outbound-call and scoring-literal greps print nothing. In the mutation check (claims 15 → 20 plus an unfixtured `flood_zone` in the real KB), exactly the expected 9 tests failed: the 4 claims scenarios, 2 band sums, 2 configurability "before" states, and the coverage check for `flood_zone`. The KB was restored with a 0-line diff.
+- **What changed:** `backend/src/engine/{evaluate,score,band,test-kb}.ts` and their specs; `backend/src/quote/{response,service}.ts`, `service.spec.ts`; `backend/src/quote/request.ts` and `kb/loader.ts` (+ spec) for unscored fields; `backend/test/*.ts`; `backend/jest.config.js` (`test/` root); `specs/roadmap.md` (service moved into Phase 2); `CLAUDE.md` (status)
+- **Why:**
+  - R1 25 and R4 15: the evaluator is generic, with no switch; the brief's three KB-only changes and the compound factor are each proven against the same engine with an in-memory patched KB.
+  - The brief's "Jest tests covering all 3 risk bands (3+ cases)": `bands.json` has 6 cases, with premiums.
+  - Decisions not in the specs, each flagged in the roadmap:
+    - `service.ts` was moved into Phase 2, because the band scenarios check premiums.
+    - `AppliedFactor` lives in `engine/score.ts`, not `quote/response.ts`, so `engine/` never imports `quote/`.
+    - `unscoredFields` in `request.ts` is the one source for fields that are never scored.
+- **Rejected / corrected:**
+  - The pattern's `import { AppliedFactor } from '../quote/response'` in the scorer was rejected, because it inverts the pattern's own dependency direction.
+  - `service.spec` showed the loader accepted a factor on `customerName` that the service then stripped, so the factor would silently never fire; `kb-factor` rejects exactly that. The loader now rejects conditions on unscored fields ("collected but never scored"), with a test.
+  - The first `baseRequest()` helper narrowed with a hand-written `typeof` check; it was replaced with a Zod parse, as the skill requires.
+  - One documented `as` remains, in `configurability.spec.ts` (the typed-lookup idiom for the patch ops). It widens a function type and never touches data.
+  - The wrong fixture value is recorded in Entry 14.

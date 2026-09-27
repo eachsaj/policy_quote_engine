@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z } from 'zod';
 import { templateTokens } from '../engine/template';
-import { quoteRequestSchema } from '../quote/request';
+import { quoteRequestSchema, unscoredFields } from '../quote/request';
 import { summaryTokens } from '../quote/summary-tokens';
 import { kbSchema } from './schema';
 import type { Condition, Kb, LoadedKb, OrderedBand } from './types';
@@ -63,6 +63,9 @@ const fieldProblems = (kb: Kb): string[] =>
     ...leavesOf(f.condition, `factors[${i}].condition`)
       .filter(({ field }) => !isRequestField(field))
       .map(({ field, at }) => `${at}.field: "${field}" is not a quote request field`),
+    ...leavesOf(f.condition, `factors[${i}].condition`)
+      .filter(({ field }) => unscoredFields.has(field))
+      .map(({ field, at }) => `${at}.field: "${field}" is collected but never scored`),
     // perOccurrence multiplies points by the field's value, so that field must be numeric.
     ...('field' in f.condition && f.perOccurrence && isRequestField(f.condition.field) &&
     !(requestShape[f.condition.field] instanceof z.ZodNumber)

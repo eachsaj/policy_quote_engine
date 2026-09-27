@@ -81,6 +81,8 @@ Every phase follows the same loop, so the log shows intentional engineering:
 
     Each changes the result, and no engine file changes.
 
+- **Brought forward from Phase 3** (done in Phase 2, log #15): `quote/response.ts` and `quote/service.ts` (`getQuote`). The scenario runners need the premium, so each band's multiplier is checked in Phase 2. Both are pure and owned by `risk-engine`. `AppliedFactor` lives in `engine/score.ts` and is re-exported by `quote/response.ts`, so `engine/` never imports `quote/`.
+
 **Done when:** all engine tests pass, `lint` shows no `switch`, and the no-numbers grep over `engine/` is clean.
 
 ## Phase 3: Quote service, handler and local server (R4, R6)
@@ -92,7 +94,7 @@ Every phase follows the same loop, so the log shows intentional engineering:
   - `postcode`: trimmed and upper-cased.
   - `previousClaims`: in the last 5 years.
 - The loader checks that every KB `condition.field` exists in this schema.
-- `quote/response.ts`: the `QuoteResponse`, `AppliedFactor` and `CoverageDetails` interfaces.
+- `quote/response.ts` and `quote/service.ts` were built in Phase 2 (see there). Phase 3 only confirms the handler returns their output unchanged:
 - `quote/service.ts`:
   - `annualPremium = basePremium × riskMultiplier × coverageLoadFactor`, and `monthlyPremium = annual / 12`, rounded only at the response boundary.
   - `riskSummary` from the band template.

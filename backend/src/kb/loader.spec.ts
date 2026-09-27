@@ -74,6 +74,8 @@ describe('KB loader', () => {
       kb.factors[3] = { ...kb.factors[3], condition: { not: { field: 'hasAlarm', operator: 'eq', value: true } } };
       return kb;
     }, 'factors[3].condition.not.field: "hasAlarm" is not a quote request field'],
+    ['6. condition on an unscored field', (kb) => { kb.factors[3] = { ...kb.factors[3], condition: { field: 'customerName', operator: 'eq', value: 'x' } }; return kb; },
+      'factors[3].condition.field: "customerName" is collected but never scored'],
     ['6. perOccurrence on a non-numeric field', (kb) => { kb.factors[3] = { ...kb.factors[3], perOccurrence: true }; return kb; },
       'factors[3].perOccurrence: field "propertyType" is not numeric'],
   ])('rejects %s', (_name, breakKb, expected) => {

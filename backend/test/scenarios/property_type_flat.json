@@ -1,0 +1,14 @@
+[
+  {
+    "name": "a Flat",
+    "request": { "propertyType": "Flat" },
+    "expect": { "riskScore": 10, "riskBand": "STANDARD", "appliedFactorIds": ["property_type_flat"] },
+    "why": "eq Flat matches → +10; 10 → STANDARD"
+  },
+  {
+    "name": "a Bungalow does not match",
+    "request": { "propertyType": "Bungalow" },
+    "expect": { "riskScore": 0, "riskBand": "STANDARD", "appliedFactorIds": [] },
+    "why": "Bungalow ≠ Flat → no factor; 0 → STANDARD"
+  }
+]

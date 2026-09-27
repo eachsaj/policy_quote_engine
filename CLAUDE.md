@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-Phase 1 is done: `risk-kb.json`, the backend scaffold, `engine/operators.ts`, `engine/template.ts`, `kb/*` and `quote/request.ts` exist and pass the gates. Everything else below is still the planned design (see `specs/roadmap.md` for the next phase). Check that a path exists before relying on it, and update this file as the code lands.
+Phases 1–2 are done: `risk-kb.json`, the backend scaffold, `engine/*`, `kb/*`, `quote/request.ts`, `quote/service.ts`, `quote/response.ts` and the KB-driven tests under `backend/test/` exist and pass the gates. Everything else below is still the planned design (see `specs/roadmap.md` for the next phase). Check that a path exists before relying on it, and update this file as the code lands.
 
 ## Sources of truth
 
