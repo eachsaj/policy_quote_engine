@@ -37,7 +37,7 @@ export const operators = {
   /** Exclusive: the bounds themselves do not match ("under min or over max"). */
   outside_range: defineOperator(range, (v, p) => num(v) && (v < p.min || v > p.max)),
   in: defineOperator(valueList, (v, p) => p.values.some((x) => x === v)),
-  /** Case-insensitive prefix match against any of `values`, e.g. postcode areas ["EX", "PL"]. */
+  /** Case-insensitive prefix match against any of `values` (e.g. area codes). */
   starts_with: defineOperator(
     prefixList,
     (v, p) => typeof v === 'string' && p.values.some((prefix) => v.toUpperCase().startsWith(prefix.toUpperCase())),

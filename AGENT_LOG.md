@@ -466,3 +466,45 @@ Chronological record of significant agent interactions while building PolicyQuot
   - The first runtime image listed `@jest`, `@babel`, `@eslint` and `@typescript-eslint` under `node_modules`. On inspection they were **empty directories** that npm's `--omit=dev` leaves behind; the only real package was `zod`. They were removed anyway with `find -type d -empty -delete`, so the image doesn't misrepresent itself in a review. The earlier name-only check (`tsx|typescript|jest`) had passed and would have missed the scoped folders.
   - The skill's reference Dockerfile (floating `node:22-alpine`, `COPY backend/ ./`) was brought in line with the real one.
   - Known trade-off, left as is: the read-only root mount also exposes the rest of the repo inside the container at `/app/kb`. That is harmless locally, but a production image would use the baked-in KB or a versioned artefact (README "KB versioning").
+
+## Entry 24: Phase 8: audit, fresh-clone check, SOLUTION.md, log review
+
+- **When:** 2026-09-27 19:19
+- **Phase / skill:** Phase 8 / all skills' definitions of done, `agent-log`
+- **Prompt:** "start phase 8"
+- **Output:**
+  - Final gates: backend `tsc`, lint, 146/146 Jest, build; frontend build (64.4 kB transferred), lint, 38/38 Vitest.
+  - 14 grep gates: 13 passed first time. The "KB field names in `engine/`" gate caught a doc comment in `operators.ts` ("e.g. postcode areas") and passed once it was reworded.
+  - A script diffing the KB against the brief: nothing removed or changed.
+  - `gh`: the repo is PUBLIC.
+  - **Fresh clone** of `phase-7-docker` from GitHub into the scratchpad:
+    - the README's 4 commands (install and start, backend and frontend) served `:4200`, and the five samples went through the proxy with the expected results
+    - `docker compose up --build` from the same clone: both containers healthy, `/health` 1.1.0 through nginx, three bands correct, `whoami` → `node`
+  - `SOLUTION.md` was rewritten to match what was built (hot reload, last-good KB, schema gate, Docker, tests as data): 267/300 words, the brief's four parts.
+  - `specs/review-prep.md`: rubric self-audit R1–R6 with evidence, short Q&A answers, and the live-demo script. The roadmap records the coverage-matrix result.
+  - Log review (script): 23 entries, contiguous, chronological (01:54 → 19:13), every field present, no TODO, no "nothing rejected".
+- **What changed:** `SOLUTION.md`, `specs/review-prep.md` (new), `specs/roadmap.md` (audit note), `backend/src/engine/operators.ts` (comment only), `CLAUDE.md` (status)
+- **Why:** The roadmap's Phase 8: self-audit before polishing, and prove the submission runs from a fresh clone on both paths (brief deliverables; R2, R5, R6).
+- **Rejected / corrected:**
+  - `SOLUTION.md`'s improvement said "drop the customer's name from the scoring request", but the service has stripped it since Phase 2. It was reworded to what is actually left: the name still crosses the API.
+  - Earlier entries are not rewritten. These statements were superseded later, in order:
+    - Entry 2 "Dockerfile dropped" → Entry 6
+    - Entry 4 array bands / `max: null` → Entry 5
+    - Entry 3 "re-check in Phase 7" → Entry 11 / this entry
+    - Entry 7 `test` vs `matches` wording → Entry 11
+    - Entry 9 "patch the real KB" → Entry 22
+    - Entry 16 exact scores in `handler.spec` → Entry 20
+  - Entries 1–10 predate the `(log #N)` commit convention; the first commit (`initial-setup`) cites none.
+  - **Finding for the user, not fixed by the agent:** the default branch `main` still has only the initial commit, so a reviewer cloning the repo would get none of the work. Merging is the user's decision.
+
+## Entry 25: Branches merged to main; audit docs updated
+
+- **When:** 2026-09-27 19:21
+- **Phase / skill:** Phase 8 follow-up / `agent-log`
+- **Prompt:** "all branches and pull request are merged"
+- **Output:** The agent verified the user's statement instead of assuming it. `git fetch` plus `gh pr list` showed PRs #1–#4 merged, none open, and `origin/main` at `e8d601e` containing `cde2c48` (Phase 7). `git diff cde2c48 origin/main` is empty, so `main`'s content is exactly the tested Phase 7 tree. It then updated the three status docs that still described `main` as "initial commit only".
+- **What changed:** `specs/review-prep.md` (open item → submission branch), `specs/roadmap.md` (audit note), `CLAUDE.md` (status)
+- **Why:** This resolves the submission blocker raised in Entry 24: a reviewer cloning the public repo's default branch now gets the app. The fresh-clone checks in Entry 24 ran on `phase-7-docker` at `cde2c48`, which is content-identical to `main`, so they hold for `main`.
+- **Rejected / corrected:**
+  - Entry 24's "`main` has only the initial commit" is superseded here, not edited, per the log rules.
+  - The Phase 8 changes themselves are still uncommitted and are **not on `main` yet**. The agent did not commit or push them without the user's go-ahead.
