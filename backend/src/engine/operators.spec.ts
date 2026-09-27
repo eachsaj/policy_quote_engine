@@ -26,9 +26,9 @@ describe('operator registry', () => {
     ['outside_range', { min: 25, max: 75 }, 75, false],
     ['in', { values: ['Flat', 'Bungalow'] }, 'Bungalow', true],
     ['in', { values: ['Flat', 'Bungalow'] }, 'House', false],
-    ['starts_with', { values: ['EX', 'PL'] }, 'EX4 1AA', true],
-    ['starts_with', { values: ['EX', 'PL'] }, 'pl1 2ab', true],
-    ['starts_with', { values: ['EX', 'PL'] }, 'SW1A 1AA', false],
+    ['starts_with', { values: ['T12', 'N37'] }, 'T12 X70A', true],
+    ['starts_with', { values: ['T12', 'N37'] }, 'n37 a0c4', true],
+    ['starts_with', { values: ['T12', 'N37'] }, 'D02 X285', false],
   ])('%s %j on %j → %s', (op, params, value, expected) => {
     expect(operators[op].matches(value, params)).toBe(expected);
   });

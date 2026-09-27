@@ -1,12 +1,12 @@
 [
   {
-    "name": "£750,000 exactly is not over £750,000",
+    "name": "€750,000 exactly is not over €750,000",
     "request": { "propertyValue": 750000 },
     "expect": { "riskScore": 0, "riskBand": "STANDARD", "appliedFactorIds": [] },
     "why": "gt is strict: 750000 is not > 750000 → no factor; 0 → STANDARD"
   },
   {
-    "name": "£750,001 is over £750,000",
+    "name": "€750,001 is over €750,000",
     "request": { "propertyValue": 750001 },
     "expect": { "riskScore": 25, "riskBand": "STANDARD", "appliedFactorIds": ["property_value_high"], "annualPremium": 360 },
     "why": "750001 > 750000 → +25; 25 is the top of STANDARD (0–25); 300 × 1.0 × 1.2 = 360"

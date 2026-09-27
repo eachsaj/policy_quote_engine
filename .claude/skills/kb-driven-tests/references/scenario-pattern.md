@@ -31,7 +31,7 @@ backend/test/
 `_base.json`: a full, valid request that triggers nothing. Choose values away from every factor's boundary.
 
 ```json
-{ "customerName": "Test Customer", "age": 40, "propertyType": "House", "propertyValue": 250000, "postcode": "SW1A 1AA", "previousClaims": 0 }
+{ "customerName": "Test Customer", "age": 40, "propertyType": "House", "propertyValue": 250000, "postcode": "D02 X285", "previousClaims": 0 }
 ```
 
 A scenario file is an array. `request` holds only the fields that differ from `_base`.
@@ -60,14 +60,14 @@ A configurability case:
 ```json
 {
   "name": "adding a flood-zone factor changes the quote with no code change",
-  "request": { "postcode": "EX4 1AA" },
+  "request": { "postcode": "T12 X70A" },
   "patch": [
-    { "op": "addFactor", "factor": { "id": "flood_zone", "description": "Property in a flood-risk postcode area",
-      "condition": { "field": "postcode", "operator": "starts_with", "values": ["EX", "PL"] }, "points": 15 } }
+    { "op": "addFactor", "factor": { "id": "flood_zone", "description": "Property in a flood-risk Eircode routing area",
+      "condition": { "field": "postcode", "operator": "starts_with", "values": ["T12", "N37"] }, "points": 15 } }
   ],
   "before": { "riskScore": 0, "appliedFactorIds": [] },
   "after":  { "riskScore": 15, "appliedFactorIds": ["flood_zone"] },
-  "why": "base scores 0; EX4 starts with EX → +15"
+  "why": "base scores 0; T12 X70A starts with T12 → +15"
 }
 ```
 
@@ -182,7 +182,7 @@ test.each(cases)('$label', ({ request, expect: expected }) => {
 });
 ```
 
-`quoteRequestSchema` applies its transforms (postcode upper-casing), so a fixture with `"ex4 1aa"` also tests normalisation.
+`quoteRequestSchema` applies its transforms (postcode upper-casing), so a fixture with `"t12 x70a"` also tests normalisation.
 
 ## Configurability runner (`test/configurability.spec.ts`)
 
@@ -270,7 +270,7 @@ For a factor, derive the inputs from its condition:
 | `eq` / `in` | a matching value, and one other valid enum value |
 | `gt` / `lt` / `gte` / `lte` | the boundary value and one step either side (e.g. `gt 500000`: 500000 no, 500001 yes) |
 | `between` / `outside_range` | `min`, `max`, `min − 1`, `max + 1` |
-| `starts_with` | each prefix, lower-case input (normalisation), and a near prefix (`"E1 6AN"` vs `EX`) |
+| `starts_with` | each prefix, lower-case input (normalisation), and a near prefix (`"T23 …"` vs `T12`) |
 | `all` | all true, then each branch false on its own |
 | `any` | each branch true on its own, then all false |
 | `not` | inner true, inner false |

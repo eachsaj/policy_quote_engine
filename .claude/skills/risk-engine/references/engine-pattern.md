@@ -477,7 +477,7 @@ Cases to cover, as `test.each` tables where the shape repeats:
 |---|---|
 | `operators.spec.ts` | each operator true and false; `starts_with` is case-insensitive; a numeric operator on a string value is `false` |
 | `evaluate.spec.ts` | leaf; `all` true/false; `any` true/false; `not`; nested `all` inside `any` |
-| `score.spec.ts` | disabled factor skipped; `perOccurrence` with 1, 2, 3 and 5 claims; compound "Flat AND > £500k" |
+| `score.spec.ts` | disabled factor skipped; `perOccurrence` with 1, 2, 3 and 5 claims; compound "Flat AND > €500k" |
 | `band.spec.ts` | 0, 25, 26, 60, 61, 999, 1000 (clamped, warns) |
 | `loader.spec.ts` | the real KB loads; bad JSON; unsupported `schemaVersion`; unknown operator; bad params (`between` without `max`); duplicate id; band gap; band not starting at 0; unknown field; `perOccurrence` on a group; unknown summary token. Each asserts the message contains the path |
 | `service.spec.ts` | one request per band with hand-computed premiums (e.g. 300 × 1.5 × 1.2 = 540.00, monthly 45.00); `kbVersion` passed through; `customerName` absent from the scoring input |

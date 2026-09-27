@@ -1,11 +1,11 @@
 {
   "name": "adding a flood-zone factor changes the quote with no code change",
-  "request": { "postcode": "ex4 1aa" },
+  "request": { "postcode": "t12 x70a" },
   "patch": [
-    { "op": "addFactor", "factor": { "id": "flood_zone", "description": "Property in a flood-risk postcode area",
-      "condition": { "field": "postcode", "operator": "starts_with", "values": ["EX", "PL"] }, "points": 15 } }
+    { "op": "addFactor", "factor": { "id": "flood_zone", "description": "Property in a flood-risk Eircode routing area",
+      "condition": { "field": "postcode", "operator": "starts_with", "values": ["T12", "N37"] }, "points": 15 } }
   ],
   "before": { "riskScore": 0, "riskBand": "STANDARD", "appliedFactorIds": [] },
   "after": { "riskScore": 15, "riskBand": "STANDARD", "appliedFactorIds": ["flood_zone"] },
-  "why": "base scores 0; the request upper-cases ex4 1aa to EX4 1AA, which starts with EX → +15"
+  "why": "base scores 0; the request upper-cases t12 x70a to T12 X70A, which starts with T12 → +15"
 }

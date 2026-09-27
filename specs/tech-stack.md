@@ -17,11 +17,13 @@ Every choice below traces back to one of the six graded areas in the brief. When
 
 ## Repository layout
 
-Two independent packages, each started with its own `npm start`. The KB sits at the root as a first-class artifact.
+Two independent packages, each started with its own `npm start`. A root `package.json` adds a convenience `npm start` that runs both (`scripts/start.mjs`, no dependencies, not a workspace). The KB sits at the root as a first-class artifact.
 
 ```
 policy_quote_engine/
 ├── risk-kb.json            # the Knowledge Base (R1)
+├── package.json            # root npm start → scripts/start.mjs: backend + frontend together
+├── scripts/start.mjs       # zero-dependency launcher, prefixed output, stops both on Ctrl+C
 ├── docker-compose.yml      # whole app in one command: backend :3000 + frontend :8080
 ├── .dockerignore
 ├── backend/                # Lambda-style Node.js service, :3000
@@ -60,7 +62,7 @@ There are no npm workspaces and no shared types package. The frontend keeps its 
     { "id": "previous_claims_low", "description": "1–2 previous claims",                 // brief, verbatim
       "condition": { "field": "previousClaims", "operator": "between", "min": 1, "max": 2 },
       "points": 15, "perOccurrence": true },
-    { "id": "flat_high_value", "description": "Flat AND property value over £500,000",   // + compound (bonus)
+    { "id": "flat_high_value", "description": "Flat AND property value over €500,000",   // + compound (bonus)
       "condition": { "all": [
         { "field": "propertyType",  "operator": "eq", "value": "Flat" },
         { "field": "propertyValue", "operator": "gt", "value": 500000 } ] },
@@ -74,7 +76,7 @@ Schema decisions (each one needs an explanation ready for the live review):
 | Decision | Why | Rubric |
 |---|---|---|
 | The brief's example is kept verbatim, and our fields are additive only | Reviewers compare against the brief. Extending shows we honoured the contract, while reshaping would read as ignoring it | R1 |
-| A condition is a **leaf** `{field, operator, …params}` (the brief's shape) or a **group** `{all:[…]}`, `{any:[…]}` or `{not:{…}}`, nested recursively | Two-field and OR factors need no new code. This answers the "flat AND over £500k" question, and leaf conditions stay identical to the brief's | R1, bonus |
+| A condition is a **leaf** `{field, operator, …params}` (the brief's shape) or a **group** `{all:[…]}`, `{any:[…]}` or `{not:{…}}`, nested recursively | Two-field and OR factors need no new code. This answers the "flat AND over €500k" question, and leaf conditions stay identical to the brief's | R1, bonus |
 | Each band gets `riskMultiplier`, `label` and `summary` | The brief's table gives multipliers "from KB". `label` holds the exact badge wording ("HIGH RISK" for key `HIGH_RISK`). Summaries in the KB mean no band wording in code | R1 |
 | Band order comes from sorting by `min` at load, and ranges are checked to be contiguous, starting at 0 | Object keys carry no order. The loader derives it rather than trusting key order | R1, R4 |
 | `max: 999` is kept, and a score above the top band's `max` is clamped into the top band with a logged warning | Brief fidelity, with no crash on extreme inputs | R1 |
@@ -136,8 +138,8 @@ src/
 | `customerName` | trimmed string, 1–100 chars | Required by the brief's form. **Not a scoring input**: no KB factor reads it, and it is never logged |
 | `age` | integer, 18–120 | |
 | `propertyType` | `enum(['House', 'Flat', 'Bungalow'])` | Exactly the brief's options |
-| `propertyValue` | positive number (£) | |
-| `postcode` | UK postcode regex, trimmed and **upper-cased** | Normalised, so KB `starts_with ["EX","PL"]` matches "ex4 1aa" |
+| `propertyValue` | positive number (€) | |
+| `postcode` | Irish Eircode regex, trimmed and **upper-cased** | Normalised, so KB `starts_with ["T12","N37"]` matches "t12 x70a" |
 | `previousClaims` | integer, 0–20 | "in the last 5 years" (the form label says so) |
 
 **Loading the KB correctly (R4).** The loader runs these checks, and each failure produces a message naming the offending path:

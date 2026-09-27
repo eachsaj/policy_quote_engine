@@ -9,7 +9,7 @@ const claims: Factor = {
 };
 const kb = kbWith({ version: '9.9.9', factors: [claims], coverage: { items: [{ id: 'buildings', description: 'Buildings cover' }] } });
 const request: QuoteRequest = {
-  customerName: 'A Customer', age: 40, propertyType: 'House', propertyValue: 250000, postcode: 'SW1A 1AA', previousClaims: 0,
+  customerName: 'A Customer', age: 40, propertyType: 'House', propertyValue: 250000, postcode: 'D02 X285', previousClaims: 0,
 };
 
 describe('getQuote', () => {
@@ -18,7 +18,7 @@ describe('getQuote', () => {
     [0, 0, 'STANDARD', 360, 30],    // 300 × 1.0 × 1.2 = 360; / 12 = 30
     [2, 30, 'ELEVATED', 540, 45],   // 15 × 2 = 30; 300 × 1.5 × 1.2 = 540; / 12 = 45
     [5, 75, 'HIGH_RISK', 792, 66],  // 15 × 5 = 75; 300 × 2.2 × 1.2 = 792; / 12 = 66
-  ])('%i claims → score %i, %s, £%d a year, £%d a month', (previousClaims, score, band, annual, monthly) => {
+  ])('%i claims → score %i, %s, €%d a year, €%d a month', (previousClaims, score, band, annual, monthly) => {
     const quote = getQuote({ ...request, previousClaims }, kb);
     expect(quote).toMatchObject({ riskScore: score, riskBand: band, annualPremium: annual, monthlyPremium: monthly });
   });

@@ -8,8 +8,8 @@ import type { SummaryToken } from './summary-tokens';
 
 // Calendar and currency facts, not scoring values: they never belong in the KB.
 const MONTHS_PER_YEAR = 12;
-const PENCE_PER_POUND = 100;
-const toPounds = (n: number): number => Math.round(n * PENCE_PER_POUND) / PENCE_PER_POUND;
+const CENTS_PER_EURO = 100;
+const toEuros = (n: number): number => Math.round(n * CENTS_PER_EURO) / CENTS_PER_EURO;
 
 /**
  * Prices a validated request against the KB. The one place the brief's formula lives:
@@ -23,8 +23,8 @@ export const getQuote = (request: QuoteRequest, kb: LoadedKb): QuoteResponse => 
   const summaryValues: Record<SummaryToken, string | number> = { score, factorCount: appliedFactors.length, label: band.label };
 
   return {
-    monthlyPremium: toPounds(annual / MONTHS_PER_YEAR), // rounding happens only here, at the response boundary
-    annualPremium: toPounds(annual),
+    monthlyPremium: toEuros(annual / MONTHS_PER_YEAR), // rounding happens only here, at the response boundary
+    annualPremium: toEuros(annual),
     riskBand: band.id,
     riskBandLabel: band.label,
     riskScore: score,

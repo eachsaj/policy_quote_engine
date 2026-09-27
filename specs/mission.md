@@ -10,10 +10,10 @@ Source of truth: `Exercise_PolicyQuote 1- AIG.pdf` (take-away exercise, 4–5 ho
 
 **Risk scoring rules live in `risk-kb.json`, not in code.** The backend loads the KB and applies it dynamically. Each of these must be a KB edit only, with zero engine code changes:
 
-- adding a factor (e.g. "flood zone postcode prefix EX or PL, +15 points")
+- adding a factor (e.g. "flood zone Eircode routing key T12 or N37, +15 points")
 - changing a weight (e.g. claims penalty 15 → 20)
 - removing a factor
-- combining fields (e.g. "Flat AND value > £500k, +35 points")
+- combining fields (e.g. "Flat AND value > €500k, +35 points")
 
 The engine is table-driven. It iterates the factors, evaluates each condition through a generic operator registry, adds up the points, and looks up the band. It does not use an if/else chain or a `switch`.
 
@@ -35,9 +35,9 @@ The engine is table-driven. It iterates the factors, evaluates each condition th
 
 **Frontend**
 - Angular 17+ with standalone components only (no NgModules).
-- A reactive form with these fields: customer name, age, property type (House / Flat / Bungalow), property value (£), postcode, and number of previous claims in the last 5 years.
+- A reactive form with these fields: customer name, age, property type (House / Flat / Bungalow), property value (€), postcode, and number of previous claims in the last 5 years.
 - Signals for all UI state (`loading`, `quoteResult`, `errorMessage`), using `signal()`, `computed()` and `effect()` correctly. No `BehaviorSubject` or `Subject` for local state.
-- The display shows the monthly premium (£), annual premium (£), a risk band badge (STANDARD / ELEVATED / HIGH RISK), a plain-English risk summary, and the applied factors, using their KB labels.
+- The display shows the monthly premium (€), annual premium (€), a risk band badge (STANDARD / ELEVATED / HIGH RISK), a plain-English risk summary, and the applied factors, using their KB labels.
 - A reusable `RiskBandBadgeComponent` with a `riskBand` input.
 - The form posts with RxJS `HttpClient` to `POST /policy/quote`.
 - Own CSS only. No Material, PrimeNG or Bootstrap.

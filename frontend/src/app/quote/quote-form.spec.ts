@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { FormBuilder } from '@angular/forms';
 import { buildQuoteForm, toQuoteRequest } from './quote-form';
 
-const valid = { customerName: 'A Customer', age: 40, propertyType: 'House' as const, propertyValue: 250000, postcode: 'SW1A 1AA', previousClaims: 0 };
+const valid = { customerName: 'A Customer', age: 40, propertyType: 'House' as const, propertyValue: 250000, postcode: 'D02 X285', previousClaims: 0 };
 const form = () => {
   const f = buildQuoteForm(TestBed.inject(FormBuilder));
   f.setValue(valid);
@@ -29,7 +29,11 @@ describe('quote form validators mirror the backend Zod schema', () => {
     ['propertyValue 0', (f) => set(f.controls.propertyValue, 0), false],               // positive()
     ['propertyValue 0.5', (f) => set(f.controls.propertyValue, 0.5), true],            // positive() allows fractions; Validators.min(1) would not
     ['postcode invalid', (f) => set(f.controls.postcode, 'NOT A POSTCODE'), false],
-    ['postcode lower-case', (f) => set(f.controls.postcode, 'ex4 1aa'), true],         // upper-cased when the request is built
+    ['postcode lower-case', (f) => set(f.controls.postcode, 't12 x70a'), true],         // upper-cased when the request is built
+    ['postcode no space', (f) => set(f.controls.postcode, 'A65F4E2'), true],
+    ['postcode D6W routing key', (f) => set(f.controls.postcode, 'D6W 1234'), true],
+    ['postcode UK format', (f) => set(f.controls.postcode, 'SW1A 1AA'), false],          // UK postcodes are no longer accepted
+    ['postcode letter B', (f) => set(f.controls.postcode, 'D02 B285'), false],           // B is not an Eircode letter
     ['previousClaims -1', (f) => set(f.controls.previousClaims, -1), false],
     ['previousClaims 21', (f) => set(f.controls.previousClaims, 21), false],
     ['previousClaims 1.5', (f) => set(f.controls.previousClaims, 1.5), false],
@@ -40,8 +44,8 @@ describe('quote form validators mirror the backend Zod schema', () => {
 
   it('builds a trimmed, upper-cased request with no casts', () => {
     const f = form();
-    f.patchValue({ customerName: '  Sam  ', postcode: ' ex4 1aa ' });
-    expect(toQuoteRequest(f.getRawValue())).toEqual({ ...valid, customerName: 'Sam', postcode: 'EX4 1AA' });
+    f.patchValue({ customerName: '  Sam  ', postcode: ' t12 x70a ' });
+    expect(toQuoteRequest(f.getRawValue())).toEqual({ ...valid, customerName: 'Sam', postcode: 'T12 X70A' });
   });
 
   it('returns null while a required field is empty', () => {

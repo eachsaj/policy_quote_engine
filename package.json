@@ -1,0 +1,11 @@
+{
+  "name": "policyquote",
+  "private": true,
+  "description": "Convenience launcher: runs the backend and frontend together. Each package still starts on its own with npm start.",
+  "scripts": {
+    "start": "node scripts/start.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

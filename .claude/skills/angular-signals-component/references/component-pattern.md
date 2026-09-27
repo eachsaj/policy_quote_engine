@@ -103,7 +103,7 @@ The validators mirror Zod. `toQuoteRequest` narrows the raw value with no `!` or
 import { FormBuilder, Validators } from '@angular/forms';
 import { propertyTypes, type PropertyType, type QuoteRequest } from '../models/quote';
 
-export const ukPostcode = /^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$/i; // same as backend quote/request.ts
+export const eircode = /^[ACDEFHKNPRTVWXY]\d[\dW] ?[\dACDEFHKNPRTVWXY]{4}$/i; // same as backend quote/request.ts
 
 export const buildQuoteForm = (fb: FormBuilder) =>
   fb.group({
@@ -111,7 +111,7 @@ export const buildQuoteForm = (fb: FormBuilder) =>
     age: fb.control<number | null>(null, [Validators.required, Validators.min(18), Validators.max(120), Validators.pattern(/^\d+$/)]),
     propertyType: fb.control<PropertyType | null>(null, Validators.required),
     propertyValue: fb.control<number | null>(null, [Validators.required, Validators.min(1)]),
-    postcode: fb.nonNullable.control('', [Validators.required, Validators.pattern(ukPostcode)]),
+    postcode: fb.nonNullable.control('', [Validators.required, Validators.pattern(eircode)]),
     previousClaims: fb.control<number | null>(0, [Validators.required, Validators.min(0), Validators.max(20), Validators.pattern(/^\d+$/)]),
   });
 
@@ -174,7 +174,7 @@ export class QuotePageComponent {
   protected readonly hasResult = computed(() => this.quoteResult() !== null);
   protected readonly announcement = computed(() => {
     const q = this.quoteResult();
-    return q ? `Quote ready: ${q.riskBandLabel}, £${q.monthlyPremium.toFixed(2)} a month.` : '';
+    return q ? `Quote ready: ${q.riskBandLabel}, €${q.monthlyPremium.toFixed(2)} a month.` : '';
   });
 
   private readonly resultHeading = viewChild<ElementRef<HTMLElement>>('resultHeading');
@@ -245,7 +245,7 @@ One field shown in full; the others follow the same pattern.
     </select>
   </div>
 
-  <!-- customerName, propertyValue (£), postcode, previousClaims ("in the last 5 years"): same pattern -->
+  <!-- customerName, propertyValue (€), postcode, previousClaims ("in the last 5 years"): same pattern -->
 
   <button type="submit" [disabled]="!canSubmit()" [attr.aria-busy]="loading()">
     {{ loading() ? 'Getting your quote…' : 'Get quote' }}
@@ -273,7 +273,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import type { QuoteResponse } from '../models/quote';
 import { RiskBandBadgeComponent } from '../risk-band-badge/risk-band-badge.component';
 
-const gbp = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' });
+const eur = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
 
 @Component({
   selector: 'app-quote-result',
@@ -285,8 +285,8 @@ const gbp = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' 
 export class QuoteResultComponent {
   readonly quote = input.required<QuoteResponse>();
 
-  protected readonly monthly = computed(() => gbp.format(this.quote().monthlyPremium));
-  protected readonly annual = computed(() => gbp.format(this.quote().annualPremium));
+  protected readonly monthly = computed(() => eur.format(this.quote().monthlyPremium));
+  protected readonly annual = computed(() => eur.format(this.quote().annualPremium));
   protected readonly sortedFactors = computed(() => [...this.quote().appliedFactors].sort((a, b) => b.points - a.points));
   protected readonly totalPoints = computed(() => this.sortedFactors().reduce((sum, f) => sum + f.points, 0));
 }
@@ -391,7 +391,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { QuotePageComponent } from './quote-page.component';
 
-const validForm = { customerName: 'A Customer', age: 40, propertyType: 'House' as const, propertyValue: 250000, postcode: 'SW1A 1AA', previousClaims: 0 };
+const validForm = { customerName: 'A Customer', age: 40, propertyType: 'House' as const, propertyValue: 250000, postcode: 'D02 X285', previousClaims: 0 };
 
 beforeEach(() => TestBed.configureTestingModule({
   providers: [provideZonelessChangeDetection(), provideHttpClient(), provideHttpClientTesting()],

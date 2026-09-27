@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-Phases 1–8 are done: the app works end to end, the KB is at 1.1.0 with the compound `flat_high_value` factor, and KB versioning is tested and documented in `README.md`. Backend: `risk-kb.json`, `engine/*`, `kb/*`, `quote/*`, `http/types.ts`, `handler.ts`, `server.ts` with KB hot reload, `backend/requests/*.json`. Frontend: `models/quote.ts`, `QuoteService`, the reactive form, `QuotePageComponent` (the three signals), `QuoteResultComponent` and `RiskBandBadgeComponent`. Phase 7 (Docker) is done: `backend/Dockerfile`, `frontend/Dockerfile` + `nginx.conf`, `docker-compose.yml`. Phase 8 (audit, final `SOLUTION.md`, `specs/review-prep.md` with the Q&A and demo script) is done. Phases 0–7 are merged to `main` (PRs #1–#4). Everything else below is still the planned design (see `specs/roadmap.md` for the next phase). Check that a path exists before relying on it, and update this file as the code lands.
+Phases 1–8 are done: the app works end to end, the KB is at 1.1.1 with the compound `flat_high_value` factor, and KB versioning is tested and documented in `README.md`. Backend: `risk-kb.json`, `engine/*`, `kb/*`, `quote/*`, `http/types.ts`, `handler.ts`, `server.ts` with KB hot reload, `backend/requests/*.json`. Frontend: `models/quote.ts`, `QuoteService`, the reactive form, `QuotePageComponent` (the three signals), `QuoteResultComponent` and `RiskBandBadgeComponent`. Phase 7 (Docker) is done: `backend/Dockerfile`, `frontend/Dockerfile` + `nginx.conf`, `docker-compose.yml`. Phase 8 (audit, final `SOLUTION.md`, `specs/review-prep.md` with the Q&A and demo script) is done. Phases 0–8 are merged to `main` (PRs #1–#5). After Phase 8 there is a root `npm start` (`scripts/start.mjs`) that runs both services, and an Irish localisation: amounts in euro and `postcode` validated as an Eircode (AGENT_LOG #26, #27). Everything else below is still the planned design (see `specs/roadmap.md` for the next phase). Check that a path exists before relying on it, and update this file as the code lands.
 
 ## Sources of truth
 
@@ -33,7 +33,7 @@ PolicyQuote is a single-page home insurance quote tool: an Angular frontend (`fr
   - `http/types.ts`: local `HttpEvent`, `HttpResult` and `HandlerContext` types, a structural subset of API Gateway. There is no AWS dependency.
   - `handler.ts`: `handler(event, context)` handles protocol only (JSON parse, Zod validation, a `Record<"METHOD /path", fn>` route map, CORS on every response, error mapping). `POST /policy/quote` is the single business endpoint; `GET /health` (returns `kbVersion`) is a supporting endpoint kept by decision; plus `OPTIONS /policy/quote`.
   - `server.ts`: a plain `node:http` adapter that turns requests into events. It has no framework, routing or validation. It calls `loadKb()` before it listens, and hot-reloads the KB with `fs.watchFile`, keeping the last good KB on an invalid edit.
-  - `quote/request.ts`: the Zod `quoteRequestSchema` is the single source of the request shape: the brief's six fields `customerName`, `age`, `propertyType` (`House` / `Flat` / `Bungalow`), `propertyValue`, `postcode` (upper-cased), `previousClaims`. Field names must match the `condition.field` values used in the KB.
+  - `quote/request.ts`: the Zod `quoteRequestSchema` is the single source of the request shape: the brief's six fields `customerName`, `age`, `propertyType` (`House` / `Flat` / `Bungalow`), `propertyValue`, `postcode` (an Irish Eircode, upper-cased; amounts are in euro), `previousClaims`. Field names must match the `condition.field` values used in the KB.
   - `quote/service.ts` (`getQuote(request, kb)`) and `engine/*`: all scoring and band logic, as pure functions.
 - **Response shape:** the brief's `monthlyPremium`, `annualPremium`, `riskBand`, `riskScore`, `riskSummary`, `coverageDetails`, `appliedFactors`, plus our additions `riskBandLabel` and `kbVersion`. Errors: 400 `{ error, issues: [{ field, message }] }`, 404 `{ error }`, and 500 `{ error, requestId }` with no internal details (those go to stderr).
 - **Frontend:** Angular 17+ (latest CLI), standalone, zoneless, OnPush, Reactive Forms, RxJS `HttpClient` for `POST /policy/quote`. `frontend/src/app/models/quote.ts` and the six-field form validators must stay in step with `quote/request.ts`. The dev proxy (wired into `angular.json`) forwards `/policy` and `/health` to port 3000, so `npm start` alone works.
@@ -51,6 +51,8 @@ PolicyQuote is a single-page home insurance quote tool: an Angular frontend (`fr
 ## Commands (planned)
 
 ```bash
+npm start                        # from the repo root: backend + frontend together (scripts/start.mjs)
+
 cd backend
 npm start                        # tsx src/server.ts on PORT (default 3000)
 npm test                         # jest

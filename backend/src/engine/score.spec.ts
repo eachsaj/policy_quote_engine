@@ -11,7 +11,7 @@ const claimsHigh: Factor = {
   condition: { field: 'previousClaims', operator: 'gte', value: 3 },
 };
 const flatHighValue: Factor = {
-  id: 'flat_high_value', description: 'Flat AND property value over £500,000', points: 35,
+  id: 'flat_high_value', description: 'Flat AND property value over €500,000', points: 35,
   condition: { all: [{ field: 'propertyType', operator: 'eq', value: 'Flat' }, { field: 'propertyValue', operator: 'gt', value: 500000 }] },
 };
 
@@ -36,9 +36,9 @@ describe('scoreRisk', () => {
 
   test.each<[string, number, number]>([
     ['Flat', 600000, 35],
-    ['Flat', 500000, 0],   // not over £500k
+    ['Flat', 500000, 0],   // not over €500k
     ['House', 900000, 0],  // not a Flat
-  ])('compound "Flat AND > £500k": %s at %i scores %i', (propertyType, propertyValue, score) => {
+  ])('compound "Flat AND > €500k": %s at %i scores %i', (propertyType, propertyValue, score) => {
     expect(scoreRisk({ propertyType, propertyValue }, kbWith({ factors: [flatHighValue] })).score).toBe(score);
   });
 

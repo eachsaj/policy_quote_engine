@@ -3,8 +3,8 @@ import { propertyTypes, type PropertyType, type QuoteRequest } from '../models/q
 
 // Validators mirror the backend Zod schema (backend/src/quote/request.ts). Change both in the same turn.
 
-/** Same pattern as the backend's `ukPostcode`. */
-export const ukPostcode = /^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$/i;
+/** Same pattern as the backend's `eircode`. */
+export const eircode = /^[ACDEFHKNPRTVWXY]\d[\dW] ?[\dACDEFHKNPRTVWXY]{4}$/i;
 
 const isBlank = (v: unknown): boolean => v === null || v === undefined || v === '';
 
@@ -26,7 +26,7 @@ export const buildQuoteForm = (fb: FormBuilder) =>
     age: fb.control<number | null>(null, [Validators.required, integer, Validators.min(18), Validators.max(120)]),
     propertyType: fb.control<PropertyType | null>(null, Validators.required),
     propertyValue: fb.control<number | null>(null, [Validators.required, positive]),
-    postcode: fb.nonNullable.control('', [Validators.required, Validators.pattern(ukPostcode)]),
+    postcode: fb.nonNullable.control('', [Validators.required, Validators.pattern(eircode)]),
     previousClaims: fb.control<number | null>(0, [Validators.required, integer, Validators.min(0), Validators.max(20)]),
   });
 
@@ -37,8 +37,8 @@ export const fieldLabels: Readonly<Record<keyof QuoteRequest, string>> = {
   customerName: 'Full name',
   age: 'Age',
   propertyType: 'Property type',
-  propertyValue: 'Property value (£)',
-  postcode: 'Postcode',
+  propertyValue: 'Property value (€)',
+  postcode: 'Eircode',
   previousClaims: 'Previous claims in the last 5 years',
 };
 

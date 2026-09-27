@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import type { QuoteResponse } from '../models/quote';
 import { RiskBandBadgeComponent } from '../risk-band-badge/risk-band-badge.component';
 
-const gbp = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' });
-const gbpWhole = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 });
+const eur = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
+const eurWhole = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
 
 /**
  * Presentational: reads one quote and derives everything with computed(). Every piece of risk wording
@@ -19,10 +19,10 @@ const gbpWhole = new Intl.NumberFormat('en-GB', { style: 'currency', currency: '
 export class QuoteResultComponent {
   readonly quote = input.required<QuoteResponse>();
 
-  protected readonly monthly = computed(() => gbp.format(this.quote().monthlyPremium));
-  protected readonly annual = computed(() => gbp.format(this.quote().annualPremium));
-  protected readonly sumInsured = computed(() => gbpWhole.format(this.quote().coverageDetails.sumInsured));
-  protected readonly basePremium = computed(() => gbp.format(this.quote().coverageDetails.basePremium));
+  protected readonly monthly = computed(() => eur.format(this.quote().monthlyPremium));
+  protected readonly annual = computed(() => eur.format(this.quote().annualPremium));
+  protected readonly sumInsured = computed(() => eurWhole.format(this.quote().coverageDetails.sumInsured));
+  protected readonly basePremium = computed(() => eur.format(this.quote().coverageDetails.basePremium));
   /** Highest contribution first. */
   protected readonly sortedFactors = computed(() => [...this.quote().appliedFactors].sort((a, b) => b.points - a.points));
   protected readonly totalPoints = computed(() => this.sortedFactors().reduce((sum, f) => sum + f.points, 0));
