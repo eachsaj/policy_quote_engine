@@ -74,7 +74,7 @@ Every phase follows the same loop, so the log shows intentional engineering:
   - `perOccurrence` maths (1, 2, 3 and 5 claims).
   - Each operator, including `not` and `any`.
   - A compound "Flat AND > £500k".
-  - **Configurability proof**, matching the brief's three examples. The same engine runs against in-memory KBs where:
+  - **Configurability proof**, matching the brief's three examples. The same engine runs against in-memory copies of a frozen baseline KB (`test/configurability/_baseline-kb.json`, decided in Phase 6) where:
     - the flood-zone factor is added
     - the claims weight goes from 15 to 20
     - a factor is removed

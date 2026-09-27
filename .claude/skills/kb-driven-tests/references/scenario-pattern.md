@@ -16,6 +16,7 @@ backend/test/
 │   └── <factor_id>.json      one per factor: trigger, near-miss, boundaries
 ├── scenarios.spec.ts         test.each over every scenario
 ├── configurability/
+│   ├── _baseline-kb.json     frozen v1.0.0 KB the patches apply to
 │   ├── add-factor.json       flood zone added
 │   ├── change-weight.json    claims weight 15 → 20
 │   └── remove-factor.json
@@ -208,8 +209,8 @@ const applyOp: { [K in PatchOp['op']]: (kb: KbJson, op: Extract<PatchOp, { op: K
 };
 const apply = (kb: KbJson, op: PatchOp): KbJson => (applyOp[op.op] as (k: KbJson, o: PatchOp) => KbJson)(kb, op);
 
-const kbPath = join(testDir, '..', '..', 'risk-kb.json');
-const rawKb = kbJsonSchema.parse(readJson(kbPath));
+// A frozen baseline (the v1.0.0 KB), not the live risk-kb.json: live KB edits must not move this proof.
+const rawKb = kbJsonSchema.parse(readJson(join(testDir, 'configurability', '_baseline-kb.json')));
 const baseRecord = z.record(z.string(), z.unknown()).parse(readJson(join(testDir, 'scenarios', '_base.json')));
 
 test.each(loadDir('configurability', configurabilitySchema).map(({ file, data }) => ({ ...data, label: `${file} › ${data.name}` })))(

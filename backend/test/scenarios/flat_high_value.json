@@ -1,0 +1,32 @@
+[
+  {
+    "name": "a Flat at £600,000: both branches true",
+    "request": { "propertyType": "Flat", "propertyValue": 600000 },
+    "expect": { "riskScore": 45, "riskBand": "ELEVATED", "appliedFactorIds": ["property_type_flat", "flat_high_value"], "annualPremium": 540, "monthlyPremium": 45 },
+    "why": "Flat +10; Flat AND 600000 > 500000 → +35; 45 → ELEVATED (26–60); 300 × 1.5 × 1.2 = 540; / 12 = 45"
+  },
+  {
+    "name": "a Flat at exactly £500,000: the value branch fails",
+    "request": { "propertyType": "Flat", "propertyValue": 500000 },
+    "expect": { "riskScore": 10, "riskBand": "STANDARD", "appliedFactorIds": ["property_type_flat"] },
+    "why": "gt is strict: 500000 is not > 500000, so the all fails; only Flat +10 → STANDARD"
+  },
+  {
+    "name": "a Flat at £500,001: the boundary step that matches",
+    "request": { "propertyType": "Flat", "propertyValue": 500001 },
+    "expect": { "riskScore": 45, "riskBand": "ELEVATED", "appliedFactorIds": ["property_type_flat", "flat_high_value"] },
+    "why": "500001 > 500000 and Flat → +35, plus Flat +10 = 45 → ELEVATED"
+  },
+  {
+    "name": "a House at £600,000: the type branch fails",
+    "request": { "propertyType": "House", "propertyValue": 600000 },
+    "expect": { "riskScore": 0, "riskBand": "STANDARD", "appliedFactorIds": [] },
+    "why": "House ≠ Flat, so the all fails; 600000 is not > 750000 → 0 → STANDARD"
+  },
+  {
+    "name": "a Flat at £800,000 stacks with the high-value factor",
+    "request": { "propertyType": "Flat", "propertyValue": 800000 },
+    "expect": { "riskScore": 70, "riskBand": "HIGH_RISK", "appliedFactorIds": ["property_type_flat", "property_value_high", "flat_high_value"], "annualPremium": 792 },
+    "why": "Flat +10, 800000 > 750000 +25, Flat AND > 500000 +35 → 70 → HIGH_RISK (61+); 300 × 2.2 × 1.2 = 792"
+  }
+]

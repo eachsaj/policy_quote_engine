@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-Phases 1–5 are done: the app works end to end. Backend: `risk-kb.json`, `engine/*`, `kb/*`, `quote/*`, `http/types.ts`, `handler.ts`, `server.ts` with KB hot reload, `backend/requests/*.json`. Frontend: `models/quote.ts`, `QuoteService`, the reactive form, `QuotePageComponent` (the three signals), `QuoteResultComponent` and `RiskBandBadgeComponent`. Remaining: Phase 6 (compound factor in the real KB, versioning docs, demo rehearsal), Phase 7 (Docker), Phase 8 (README, final SOLUTION.md, audit). Everything else below is still the planned design (see `specs/roadmap.md` for the next phase). Check that a path exists before relying on it, and update this file as the code lands.
+Phases 1–6 are done: the app works end to end, the KB is at 1.1.0 with the compound `flat_high_value` factor, and KB versioning is tested and documented in `README.md`. Backend: `risk-kb.json`, `engine/*`, `kb/*`, `quote/*`, `http/types.ts`, `handler.ts`, `server.ts` with KB hot reload, `backend/requests/*.json`. Frontend: `models/quote.ts`, `QuoteService`, the reactive form, `QuotePageComponent` (the three signals), `QuoteResultComponent` and `RiskBandBadgeComponent`. Remaining: Phase 7 (Docker), Phase 8 (final README, SOLUTION.md, audit). Everything else below is still the planned design (see `specs/roadmap.md` for the next phase). Check that a path exists before relying on it, and update this file as the code lands.
 
 ## Sources of truth
 

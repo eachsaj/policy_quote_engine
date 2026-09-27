@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.0.0",
   "schemaVersion": 1,
   "basePremium": 300,
   "coverageLoadFactor": 1.2,
@@ -63,17 +63,6 @@
       "description": "Property value over £750,000",
       "condition": { "field": "propertyValue", "operator": "gt", "value": 750000 },
       "points": 25
-    },
-    {
-      "id": "flat_high_value",
-      "description": "Flat valued over £500,000 — higher shared-building exposure",
-      "condition": {
-        "all": [
-          { "field": "propertyType", "operator": "eq", "value": "Flat" },
-          { "field": "propertyValue", "operator": "gt", "value": 500000 }
-        ]
-      },
-      "points": 35
     }
   ]
 }
