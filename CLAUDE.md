@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-The repo has no application code yet, only the specs and the project skills. The layout and commands below are the planned design. Check that a path exists before relying on it, and update this file as the code lands.
+Phase 1 is done: `risk-kb.json`, the backend scaffold, `engine/operators.ts`, `engine/template.ts`, `kb/*` and `quote/request.ts` exist and pass the gates. Everything else below is still the planned design (see `specs/roadmap.md` for the next phase). Check that a path exists before relying on it, and update this file as the code lands.
 
 ## Sources of truth
 
@@ -67,7 +67,7 @@ docker compose up --build        # from the repo root: whole app on :8080, KB di
 Quality gates (from `specs/tech-stack.md`); each must print nothing:
 
 ```bash
-grep -rnE --exclude='*.spec.ts' --exclude='test-kb.ts' '\b[0-9]+\.[0-9]+\b|\b([2-9]|[1-9][0-9]+)\b' backend/src/engine | grep -vE '^\S+:\s*(//|\*)'
+grep -rnE --exclude='*.spec.ts' --exclude='test-kb.ts' '\b[0-9]+\.[0-9]+\b|\b([2-9]|[1-9][0-9]+)\b' backend/src/engine | grep -vE '^\S+:[0-9]+:\s*(//|/?\*)'
 grep -rnE 'fetch\(|https?\.request|axios|openai|anthropic' backend/src
 grep -rnE 'BehaviorSubject|\bSubject\b|NgModule' frontend/src/app
 grep -nE 'material|primeng|bootstrap|tailwind' frontend/package.json

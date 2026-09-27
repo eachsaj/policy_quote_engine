@@ -59,7 +59,7 @@ cd backend && npx tsc --noEmit
 cd backend && npm run lint                                  # no-explicit-any, SwitchStatement ban, no-magic-numbers (ignore 0, 1) in engine/
 cd backend && npx jest src/engine src/kb src/quote
 grep -rnE 'switch\s*\(|:\s*any\b|as any' backend/src/engine backend/src/kb backend/src/quote/service.ts    # must print nothing
-grep -rnE --exclude='*.spec.ts' --exclude='test-kb.ts' '\b[0-9]+\.[0-9]+\b|\b([2-9]|[1-9][0-9]+)\b' backend/src/engine | grep -vE '^\S+:\s*(//|\*)'   # must print nothing: catches 2.2, 1.5, 15, 999; allows 0 and 1
+grep -rnE --exclude='*.spec.ts' --exclude='test-kb.ts' '\b[0-9]+\.[0-9]+\b|\b([2-9]|[1-9][0-9]+)\b' backend/src/engine | grep -vE '^\S+:[0-9]+:\s*(//|/?\*)'   # must print nothing: catches 2.2, 1.5, 15, 999; allows 0 and 1
 grep -rnE 'fetch\(|https?\.request|axios|openai|anthropic' backend/src                                   # must print nothing (constraint 5)
 node -e 'const kb=require("./risk-kb.json");const f=new Set();const w=c=>c.field?f.add(c.field):[...(c.all??[]),...(c.any??[]),...(c.not?[c.not]:[])].forEach(w);kb.factors.forEach(x=>w(x.condition));console.log([...f])'   # every field is in quote/request.ts
 ```

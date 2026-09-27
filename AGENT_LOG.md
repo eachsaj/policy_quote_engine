@@ -162,3 +162,50 @@ Chronological record of significant agent interactions while building PolicyQuot
   - The four-bullet privacy "improvement" was folded into one theme, to match the brief's "one thing".
   - Operator wording in `tech-stack.md` was brought in line with the skill's `matches` (Entry 7).
   - Nothing has been compiled or run yet, because there is no code.
+
+## Entry 12: Generated from KB: kb/types.ts
+
+- **When:** 2026-09-27 17:55
+- **Phase / skill:** Phase 1 / `risk-engine` (roadmap "Generate from the KB")
+- **Prompt:** "start phase 1" (the agent derived the types as the roadmap's first "generated from the KB" step)
+- **Output:** `backend/src/kb/types.ts`, derived from `risk-kb.json`. A script listed every key the KB uses:
+  - top level: `version`, `schemaVersion`, `basePremium`, `coverageLoadFactor`, `riskBands`, `coverage`, `factors`
+  - bands: `min`, `max`, `riskMultiplier`, `label`, `summary`
+  - factors: `id`, `description`, `condition`, `points`, `perOccurrence`
+  - leaf conditions: `field`, `operator`, `min`, `max`, `value`
+
+  Each key maps to an interface field; the brief's keys are verbatim and ours are marked `// +`.
+- **What changed:** `backend/src/kb/types.ts` (new)
+- **Why:** The brief asks for code generated from the KB, not just boilerplate (R2), and for a KB schema typed with interfaces (R5 10). The interfaces are the source of truth: `kb/schema.ts` ends in `satisfies z.ZodType<Kb>`, so `tsc` fails if the Zod schema drifts from them.
+- **Rejected / corrected:** A plain `LeafCondition` with named `min`/`max`/`value` fields was not used. Params sit flat on the leaf, as in the brief, and differ per operator, so the leaf has an `unknown` index signature and the registry's Zod schemas define the params. That keeps a new operator to one registry entry. The `all`/`any`/`not` groups and `enabled` are not in the KB yet (Phase 6 adds the compound factor), but they are typed now because the loader and schema must accept them.
+
+## Entry 13: Phase 1: KB, operator registry, schema, loader and quality gates
+
+- **When:** 2026-09-27 17:55
+- **Phase / skill:** Phase 1 / `risk-engine` (plus `lambda-handler`'s `quote/request.ts`, which the loader's field check needs)
+- **Prompt:** "start phase 1"
+- **Output:** The backend scaffold and Phase 1 code:
+  - `package.json` (`start`/`build`/`test`/`typecheck`/`lint`), strict `tsconfig` with `noUncheckedIndexedAccess`, `tsconfig.build.json`, Jest (ts-jest), ESLint flat config
+  - `risk-kb.json`, extending the brief's example
+  - `engine/operators.ts` (10 operators), `engine/template.ts`, `kb/schema.ts`, `kb/loader.ts` (the six checks, cache, `reloadKb`, `KB_PATH`), `quote/request.ts`, `quote/summary-tokens.ts`
+  - specs for operators, template and loader
+
+  Results: `tsc` clean; `npm run lint` clean; `jest` 51/51 passed; `npm run build` emits `dist/`; the numbers, `any`/`switch` and outbound-call greps print nothing. A script comparing the KB with the brief's example prints "removed/changed: none", and the additions are the band `riskMultiplier`/`label`/`summary`, `schemaVersion` and `coverage`. The KB's fields `[age, previousClaims, propertyType, propertyValue]` are all in the request schema.
+- **What changed:** `risk-kb.json`; `backend/` (`package.json`, `package-lock.json`, `tsconfig*.json`, `jest.config.js`, `eslint.config.mjs`, `src/engine/*`, `src/kb/*`, `src/quote/request.ts`, `src/quote/summary-tokens.ts`); `CLAUDE.md` and `risk-engine/SKILL.md` (numbers-check comment filter)
+- **Why:**
+  - R1 25: the registry validates params and rejects unknown operators at load, and bands are ordered by `min`.
+  - R4 15: "KB loaded correctly" means six checks, each naming its JSON path.
+  - R5 10: no `any`, and the Zod schema `satisfies` the interfaces.
+  - Lint rules were tested on a deliberately bad `engine/` file: they flagged `any`, `switch`, `2.2` and `15`.
+  - Decisions not in the specs:
+    - `summaryTokens` lives in `quote/summary-tokens.ts`, as the pattern allows, so the loader doesn't import the Phase 3 service.
+    - `schemaVersion` is checked before the full shape, so a v2 KB gets one clear message.
+    - Two extra load checks: `max >= min` per band, and `perOccurrence` only on a numeric request field.
+- **Rejected / corrected:**
+  - The agent's first `kb/schema.ts` had a meaningless `.check(...) &&` expression and a `key as keyof` cast; it was discarded.
+  - A plain `z.union` for conditions was probed and rejected. Zod 4 reported a bad operator as a bare `"Invalid input"` with no path, which breaks "every error names the JSON path". The node kind is now chosen by key presence from a lookup table, giving `factors.3.condition.all.1.operator: unknown operator "nope"`.
+  - `loader.spec.ts` first used an untyped `JSON.parse` (implicit `any`) and an `as typeof kb.riskBands` cast. Both passed the tests but were replaced with a Zod parse and `Object.fromEntries`.
+  - The numbers check was itself wrong: its comment filter missed `/** */` lines and flagged a doc comment. It was fixed in `CLAUDE.md` and the skill.
+  - Two doc comments quoting the brief's numbers (25, 75) were reworded, so `risk-kb.json` is the only file in `src` with scoring numbers.
+  - Jest `roots` excludes `backend/test/` until Phase 2 creates it.
+  - Tooling versions: Zod 4.6, TypeScript 6.0, Jest 30 with ts-jest 29.4. ts-jest 29 predates Jest 30 but ran cleanly.
