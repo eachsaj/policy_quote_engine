@@ -1,0 +1,14 @@
+{
+  "name": "adding an OR factor ('Bungalow, or a PL postcode') changes the quote with no code change",
+  "request": { "propertyType": "Bungalow" },
+  "patch": [
+    { "op": "addFactor", "factor": { "id": "bungalow_or_pl", "description": "Bungalow, or a property in a PL postcode area",
+      "condition": { "any": [
+        { "field": "propertyType", "operator": "eq", "value": "Bungalow" },
+        { "field": "postcode", "operator": "starts_with", "values": ["PL"] } ] },
+      "points": 5 } }
+  ],
+  "before": { "riskScore": 0, "riskBand": "STANDARD", "appliedFactorIds": [] },
+  "after": { "riskScore": 5, "riskBand": "STANDARD", "appliedFactorIds": ["bungalow_or_pl"] },
+  "why": "base scores 0; Bungalow matches the first branch of the any → +5; SW1A does not start with PL, so one branch is enough"
+}

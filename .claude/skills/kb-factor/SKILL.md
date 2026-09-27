@@ -89,7 +89,7 @@ Run these and report the real output. Don't claim success without it.
 cd backend && npx tsx -e 'import("./src/kb/loader").then(m => console.log("KB ok", m.loadKb().version))'
 
 # 2. Only KB, fixtures and sample requests changed
-git status --short          # expect risk-kb.json, backend/test/scenarios/*, backend/requests/*; nothing under src/
+git status --short          # expect risk-kb.json, backend/test/scenarios/*, backend/requests/*; nothing under src/ (the configurability proof uses a frozen baseline KB, so it never needs a change here)
 
 # 3. Tests
 cd backend && npx jest

@@ -27,14 +27,15 @@ describe('handler', () => {
     });
   });
 
-  // One sample per band, expected values worked out by hand from risk-kb.json.
-  test.each<[string, number, string, string, number, number]>([
-    ['standard', 10, 'STANDARD', 'STANDARD', 360, 30],     // Flat +10 → 0–25; 300 × 1.0 × 1.2
-    ['elevated', 30, 'ELEVATED', 'ELEVATED', 540, 45],     // 2 claims × 15 → 26–60; 300 × 1.5 × 1.2
-    ['high-risk', 85, 'HIGH_RISK', 'HIGH RISK', 792, 66],  // 20 + 10 + 25 + 15 × 2 → 61+; 300 × 2.2 × 1.2
-  ])('requests/%s.json scores %i → %s', async (name, riskScore, riskBand, riskBandLabel, annualPremium, monthlyPremium) => {
-    const res = await handler(post(sample(name)), ctx);
-    expect(json(res.body)).toMatchObject({ riskScore, riskBand, riskBandLabel, annualPremium, monthlyPremium, kbVersion: '1.0.0' });
+  // Each sample request exists to land in one band. Exact scores and premiums are asserted by the
+  // KB-driven scenario fixtures (backend/test/scenarios), so a KB-only change never needs an edit here.
+  test.each<[string, string]>([
+    ['standard', 'STANDARD'],
+    ['elevated', 'ELEVATED'],
+    ['high-risk', 'HIGH_RISK'],
+  ])('requests/%s.json lands in %s and passes the KB version through', async (name, riskBand) => {
+    const body = json((await handler(post(sample(name)), ctx)).body);
+    expect(body).toMatchObject({ riskBand, kbVersion: loader.loadKb().version });
   });
 
   it('returns 400 with field issues for an invalid body', async () => {
@@ -69,7 +70,8 @@ describe('handler', () => {
 
   it('reports the KB version on /health', async () => {
     const res = await handler({ httpMethod: 'GET', path: '/health', body: null }, ctx);
-    expect(json(res.body)).toEqual({ status: 'ok', kbVersion: '1.0.0', schemaVersion: 1, factorCount: 5 });
+    const kb = loader.loadKb();
+    expect(json(res.body)).toEqual({ status: 'ok', kbVersion: kb.version, schemaVersion: kb.schemaVersion, factorCount: kb.factors.length });
   });
 
   it('returns 500 with a requestId and no internals when the KB is invalid', async () => {

@@ -13,7 +13,7 @@ The tests are data. Each scenario is a JSON file: a request, the result a person
 |---|---|---|
 | Unit: `operators`, `evaluate`, `band`, `template`, loader failures | `risk-engine` | in-memory tables in `src/engine/*.spec.ts` and `src/kb/*.spec.ts` |
 | **Scenarios** against the real `risk-kb.json` | **this skill** | `backend/test/scenarios/*.json` → `backend/test/scenarios.spec.ts` |
-| **Configurability proof** against patched in-memory KBs | **this skill** | `backend/test/configurability/*.json` → `backend/test/configurability.spec.ts` |
+| **Configurability proof** against a patched, frozen baseline KB | **this skill** | `backend/test/configurability/*.json` + `_baseline-kb.json` → `backend/test/configurability.spec.ts` |
 | **Coverage check**: every factor and band has a scenario | **this skill** | `backend/test/coverage.spec.ts` |
 | HTTP envelope, 400/404/500 | `lambda-handler` | `src/handler.spec.ts` |
 
@@ -32,7 +32,7 @@ The tests are data. Each scenario is a JSON file: a request, the result a person
 - **Scenarios override a base request.** `_base.json` is a request that triggers no factor. `coverage.spec.ts` asserts it scores 0, so a KB change that makes the base request trigger a factor is caught straight away.
 - **Assert ids, not wording.** `appliedFactorIds` is compared as a set. Text belongs in the KB and is checked once, for the description passing through unchanged.
 - **Band boundaries on the real KB only when reachable.** If no combination of real factors lands exactly on 25/26 or 60/61, say so in `bands.json`'s `why`. The `band.spec.ts` unit table (`risk-engine`) covers the exact boundaries.
-- **Configurability proof uses data patches, never code.** Each case applies `addFactor`, `setPoints` or `removeFactor` to an in-memory copy of the real KB. The ops are a lookup table in the runner, not a `switch`. The result must differ from the unpatched KB for the same request.
+- **Configurability proof uses data patches, never code.** Each case applies `addFactor`, `setPoints` or `removeFactor` to an in-memory copy of the **frozen baseline** `configurability/_baseline-kb.json` (the v1.0.0 KB), never the live `risk-kb.json`. The proof is about the engine, so it must not move when the live rules do: patching the live KB made the flood-zone case collide with a live `flood_zone` edit in the Phase 6 rehearsal (AGENT_LOG Entry 22). The live KB is covered by the scenario fixtures and the coverage check. The ops are a lookup table in the runner, not a `switch`. The result must differ from the unpatched baseline for the same request. Never edit the baseline to make a case pass.
 - **When a KB edit moves expected values,** update only the scenarios whose arithmetic changed, and rewrite their `why`. Report which ones moved. That list is the review evidence.
 - No `any` in runners. Fixture files are parsed from `unknown` with Zod, so a malformed fixture fails with its file name and path.
 
@@ -47,7 +47,7 @@ The tests are data. Each scenario is a JSON file: a request, the result a person
 | Scenarios typed with `as QuoteRequest`, or parsed without Zod | fixtures silently drift from the request contract |
 | Asserting `riskSummary` or `description` text in scenarios | wording changes would break scoring tests |
 | Changing expected values to make a failing test pass without explaining the arithmetic | hides a regression |
-| Configurability proof that edits `risk-kb.json` on disk, or mocks the engine | must be the same engine against a different in-memory KB |
+| Configurability proof that edits `risk-kb.json` on disk, patches the live KB, or mocks the engine | must be the same engine against a different in-memory KB, independent of today's rules |
 | A factor in the KB with no scenario, fixed by skipping the coverage check | the check is how a missing fixture is caught |
 
 ## Definition of done

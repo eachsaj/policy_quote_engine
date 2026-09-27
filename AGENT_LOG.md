@@ -365,3 +365,73 @@ Chronological record of significant agent interactions while building PolicyQuot
   - A doc comment in the badge quoting "HIGH RISK" tripped the new wording gate; it was reworded.
   - `resize_window` did not change the viewport (it stayed 2516px), and the agent did not retry it; phone width was measured in a 390px iframe instead.
   - The agent's first command to stop the servers used invalid `lsof` syntax, so it silently didn't stop them. This was caught by a follow-up check and fixed.
+
+## Entry 20: KB-only change: compound factor flat_high_value (Flat AND > £500k, +35)
+
+- **When:** 2026-09-27 18:51
+- **Phase / skill:** Phase 6 / `kb-factor` (with `kb-driven-tests` for the fixture)
+- **Prompt:** "start phase 6" (the roadmap's compound factor: the brief's "Flat AND property value > £500k → +35 points")
+- **Output:**
+  - Rule restated before editing: `flat_high_value` = `all: [propertyType eq "Flat", propertyValue gt 500000]`, +35, not per occurrence; "> £500k" means `gt`, so exactly £500,000 does not match. It fits the existing operators and fields, so no escalation.
+  - Added to `risk-kb.json` on the running server; `version` 1.0.0 → 1.1.0 (minor: a factor added).
+  - New `test/scenarios/flat_high_value.json`: all true, each branch false, the 500000/500001 boundary, and stacking with `property_value_high`.
+  - Two `bands.json` cases moved, and nothing else did:
+    - "every factor type" 85 → 120 (+35), still HIGH_RISK
+    - "lowest reachable score above 60" 65 → 100 on the old request, so the case now uses age 80 + Flat + £600k = 65. Enumerating every reachable score confirmed 65 is still the lowest above 60, and 26/61 are still unreachable.
+  - `configurability/add-compound-factor.json` would now add a duplicate id, so it was replaced by `add-or-factor.json`, an `any` factor.
+  - New sample `requests/compound.json`.
+
+  DoD:
+  1. The KB loads: "KB ok 1.1.0 6 factors".
+  2. Unstaged changes were only `risk-kb.json`, `backend/test/scenarios/*`, `backend/test/configurability/*` and `backend/requests/compound.json`, with nothing under `src/`.
+  3. jest 142/142.
+  4. Without a restart (one startup line in the server log), `/health` showed `kbVersion` 1.1.0 and 6 factors; `compound.json` returned 45 / ELEVATED / £540 with `flat_high_value` +35.
+
+  In Chrome, the same request showed the new row, total 45 and "Rules version 1.1.0".
+- **What changed:** `risk-kb.json`; `backend/test/scenarios/flat_high_value.json` (new), `bands.json`; `backend/test/configurability/add-or-factor.json` (new; replaces `add-compound-factor.json`); `backend/requests/compound.json` (new)
+- **Why:** This is the brief's compound-conditions bonus and the live-review question "how would the schema handle Flat AND over £500k", answered as data (R1 25). The `all` group and the evaluator already existed from Phase 2, so this is the proof that a two-field rule is a KB edit.
+- **Rejected / corrected:**
+  - Before the KB edit, the agent found two specs under `src/` coupled to the real KB's contents: `handler.spec.ts` asserted exact sample scores and `kbVersion` '1.0.0', and `loader.spec.ts` asserted version '1.0.0', the list of five factor ids, and `factors[5]` paths that assume five factors. Any KB edit would have forced a `src/` change and broken the "KB-only" proof. They were refactored first, as a separate staged step: the handler spec asserts each sample's band and passes `kbVersion` through; the loader spec checks structure, not contents. Exact values stay in the fixtures.
+  - The first "no restart" check read the wrong log lines (the banner comes after npm's output) and printed 0; it was re-counted as 1.
+
+## Entry 21: KB versioning: schema gate test, live check, README section
+
+- **When:** 2026-09-27 18:52
+- **Phase / skill:** Phase 6 / `risk-engine` (loader behaviour), README
+- **Prompt:** "start phase 6" (the roadmap's KB versioning item: show how breaking schema changes are handled without redeploying)
+- **Output:**
+  - `backend/src/kb/versioning.spec.ts` runs the real `loadKb`/`reloadKb` against a temp KB at `KB_PATH`. It covers four cases, all passing:
+    - a version bump is served on reload
+    - additive unknown keys are accepted
+    - `schemaVersion: 2` is rejected with "schemaVersion: 2 is not supported (supported: 1)" while the last good KB (9.2.0) keeps serving
+    - a valid KB recovers
+  - Live on the running backend: publishing a `schemaVersion: 2` KB logged "kb reload rejected; last good KB still serving". `/health` stayed at 1.1.0 and a quote still returned 200. Restoring reloaded 1.1.0 with a 0-line diff.
+  - `README.md` was written with run steps, tests, the KB schema, adding a factor, and a "KB versioning" section: two version numbers, additive vs breaking changes, expand/contract rollout, and production rule sets as reviewed, versioned artefacts selected by config.
+- **What changed:** `backend/src/kb/versioning.spec.ts` (new); `README.md` (rewritten from a two-line placeholder)
+- **Why:** This is the brief's versioning bonus ("show how you'd manage breaking KB schema changes without redeploying the Lambda") and a live-review question ("version-controlled rule sets in production"), answered with a test and a live check rather than prose alone. Backend suite: 146/146; lint clean.
+- **Rejected / corrected:**
+  - No new loader code was needed: the schema gate and last-good reload already existed from Phase 1 and Phase 3, so this step only proves them.
+  - The README gives only what exists today. There is no Docker section yet (Phase 7), and Phase 8 finalises it.
+  - Additive compatibility relies on Zod's default of stripping unknown keys. That is now pinned by a test, so a future `.strict()` on the KB schema would fail it.
+
+## Entry 22: Live-change rehearsal with kb-factor: flood zone (reverted)
+
+- **When:** 2026-09-27 18:56
+- **Phase / skill:** Phase 6 / `kb-factor` rehearsal (the live-review task), `kb-driven-tests`
+- **Prompt:** "start phase 6" (the roadmap's rehearsal: add the brief's flood-zone example with `kb-factor`, verify, revert, time it, log it honestly)
+- **Output:**
+  - Rule restated: `flood_zone` = `postcode starts_with ["EX","PL"]`, +15. It fits (the operator exists, and the postcode is upper-cased by the request schema).
+  - KB 1.1.0 → 1.2.0 on the running server; fixture `flood_zone.json` (EX, lower-case PL, and the near prefix E1); sample `requests/flood-zone.json`.
+  - DoD 1: "KB ok 1.2.0". DoD 2: only the KB, the fixture and the sample changed.
+  - DoD 3 **failed**: 1 of 150. `configurability/add-factor.json` adds `flood_zone` to the live KB, which now already had one, so parseKb rejected a duplicate id. The panel's own example would have shown a red test in the live demo.
+  - Fix: the configurability proof now patches a frozen baseline, `test/configurability/_baseline-kb.json` (the v1.0.0 KB from git), instead of the live KB. Rerun: 150/150.
+  - DoD 4 without a restart: `/health` 1.2.0 with 7 factors; the flood-zone sample returned 15 / STANDARD / `flood_zone` +15.
+  - UI step **not verified this time**: the Chrome tab stopped accepting script injection after a submit (3 methods tried, then stopped). The renderer was idle (<1% CPU), the dev server and proxy returned 200, and the reloaded page had no console errors, so the problem was the automation, not the app. The same "new KB factor appears in the list" path passed in Chrome in Phase 5 (Entry 19).
+  - Reverted: the KB is back at 1.1.0 (hot-reloaded), the fixture was removed, and the flood-zone sample now scores 0, which is the demo's "before" state. Backend 146/146.
+  - Elapsed time: **200 s** from the restatement to the reverted state, including the diagnosis and the fix and the browser retries.
+- **What changed:** `backend/test/configurability.spec.ts` (baseline KB), `backend/test/configurability/_baseline-kb.json` (new), `backend/requests/flood-zone.json` (new, kept as a demo sample); the `kb-driven-tests` skill (rule, scope, reject row), its `scenario-pattern.md`, the `kb-factor` DoD note, `specs/roadmap.md` Phase 2; `CLAUDE.md` (status). `risk-kb.json` and `flood_zone.json` were reverted.
+- **Why:** The rehearsal exists to find exactly this kind of failure before the panel does (R6 10). The configurability proof is about the engine, so it must not depend on today's rules; the live KB is still covered by the scenario fixtures and the coverage check. The skill and roadmap were updated in the same turn so future agent runs don't reintroduce the coupling.
+- **Rejected / corrected:**
+  - The `kb-driven-tests` skill's own rule ("patch an in-memory copy of the real KB") was corrected. It was the root cause, not a one-off test bug.
+  - The agent did not paper over the failure by renaming the case's id; that would only move the collision to the next factor the panel names.
+  - The browser check was stopped after 3 attempts instead of looping, and the UI step is reported as unverified.
