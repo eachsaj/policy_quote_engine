@@ -174,7 +174,7 @@ export class QuotePageComponent {
   protected readonly hasResult = computed(() => this.quoteResult() !== null);
   protected readonly announcement = computed(() => {
     const q = this.quoteResult();
-    return q ? `Quote ready: ${q.riskBandLabel}, €${q.monthlyPremium.toFixed(2)} a month.` : '';
+    return q ? `Quote ready: ${q.riskBandLabel}, ${q.monthlyPremium.toFixed(2)} ${currencyNames[q.currency]} a month.` : '';
   });
 
   private readonly resultHeading = viewChild<ElementRef<HTMLElement>>('resultHeading');
@@ -273,7 +273,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import type { QuoteResponse } from '../models/quote';
 import { RiskBandBadgeComponent } from '../risk-band-badge/risk-band-badge.component';
 
-const eur = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
+// Amounts are formatted with formatMoney(amount, quote().currency) from quote/money.ts: £ for GBP, € for EUR.
 
 @Component({
   selector: 'app-quote-result',

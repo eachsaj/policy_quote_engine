@@ -57,6 +57,8 @@ describe('KB loader', () => {
         condition: { any: [{ field: 'previousClaims', operator: 'gte', value: 1 }] } });
       return kb;
     }, '.perOccurrence: perOccurrence is only allowed on a single-field (leaf) condition'],
+    ['3. wording for an unsupported currency', (kb) => { kb.factors[0] = { ...kb.factors[0], descriptions: { USD: 'Over $750,000' } }; return kb; },
+      'factors.0.descriptions: Unrecognized key: "USD"'],
     ['3. non-integer points', (kb) => { kb.factors[0] = { ...kb.factors[0], points: 2.5 }; return kb; }, 'factors.0.points:'],
     ['4. duplicate factor id', (kb) => { kb.factors.push({ ...kb.factors[0] }); return kb; }, '].id: duplicate id "age_young_elderly"'],
     ['5. band gap', (kb) => { kb.riskBands['ELEVATED'] = { ...kb.riskBands['ELEVATED'], min: 27 }; return kb; },

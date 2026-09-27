@@ -35,9 +35,9 @@ The engine is table-driven. It iterates the factors, evaluates each condition th
 
 **Frontend**
 - Angular 17+ with standalone components only (no NgModules).
-- A reactive form with these fields: customer name, age, property type (House / Flat / Bungalow), property value (€), postcode, and number of previous claims in the last 5 years.
+- A reactive form with these fields: customer name, age, property type (House / Flat / Bungalow), property value (£ or €, following the postcode), postcode (UK postcode or Eircode), and number of previous claims in the last 5 years.
 - Signals for all UI state (`loading`, `quoteResult`, `errorMessage`), using `signal()`, `computed()` and `effect()` correctly. No `BehaviorSubject` or `Subject` for local state.
-- The display shows the monthly premium (€), annual premium (€), a risk band badge (STANDARD / ELEVATED / HIGH RISK), a plain-English risk summary, and the applied factors, using their KB labels.
+- The display shows the monthly premium and annual premium (£ for a UK postcode, € for an Eircode), a risk band badge (STANDARD / ELEVATED / HIGH RISK), a plain-English risk summary, and the applied factors, using their KB labels.
 - A reusable `RiskBandBadgeComponent` with a `riskBand` input.
 - The form posts with RxJS `HttpClient` to `POST /policy/quote`.
 - Own CSS only. No Material, PrimeNG or Bootstrap.

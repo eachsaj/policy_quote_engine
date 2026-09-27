@@ -52,12 +52,13 @@ npm --prefix frontend test        # Vitest: form validators, signal state, resul
 | `schemaVersion` | the KB *shape* version, checked by the loader |
 | `basePremium`, `coverageLoadFactor` | the premium formula inputs: `basePremium × riskMultiplier × coverageLoadFactor` |
 | `riskBands` | score ranges, plus each band's `riskMultiplier`, badge `label` and `summary` template |
-| `factors[]` | `id`, customer-facing `description`, a `condition`, `points`, optional `perOccurrence` and `enabled` |
+| `factors[]` | `id`, customer-facing `description` (the brief's wording, shown for £), optional `descriptions` (wording per currency, e.g. `{ "EUR": "…€750,000" }`), a `condition`, `points`, optional `perOccurrence` and `enabled` |
 
 A `condition` is either a leaf, `{ "field", "operator", …params }`, or a group, `{ "all": [...] }`, `{ "any": [...] }` or `{ "not": {...} }`, nested to any depth. So "Flat AND over €500k" is data:
 
 ```json
-{ "id": "flat_high_value", "points": 35, "description": "Flat valued over €500,000 — higher shared-building exposure",
+{ "id": "flat_high_value", "points": 35, "description": "Flat valued over £500,000 — higher shared-building exposure",
+  "descriptions": { "EUR": "Flat valued over €500,000 — higher shared-building exposure" },
   "condition": { "all": [ { "field": "propertyType", "operator": "eq", "value": "Flat" },
                           { "field": "propertyValue", "operator": "gt", "value": 500000 } ] } }
 ```
@@ -65,6 +66,17 @@ A `condition` is either a leaf, `{ "field", "operator", …params }`, or a group
 Operators: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `between` (inclusive), `outside_range` (exclusive), `in`, `starts_with`. `perOccurrence: true` awards `points × the field's value` (2 claims × 15 = 30).
 
 The backend validates the KB at startup and on every change. A bad KB names the offending path, for example `factors.3.condition.all.1.operator: unknown operator "nope"`.
+
+## UK and Ireland
+
+The `postcode` field accepts a **UK postcode** (for example `SW1A 1AA`) or an **Irish Eircode** (for example `D02 X285`), upper-cased by the backend. The two formats never overlap, so the postcode also picks the currency ([`quote/market.ts`](backend/src/quote/market.ts)):
+
+| Postcode | `currency` in the response | Premiums shown | Factor wording |
+|---|---|---|---|
+| UK | `GBP` | £ | `description`: the brief's wording, verbatim |
+| Eircode | `EUR` | € | `descriptions.EUR` when a factor has one, otherwise `description` |
+
+The KB's numbers are the same in both markets, and amounts aren't converted: €750,000 and £750,000 trip the same factor. The form's value field shows £ or € as the postcode is typed.
 
 ## Modifying the Knowledge Base
 
@@ -90,7 +102,7 @@ The skill ([`.claude/skills/kb-factor/SKILL.md`](.claude/skills/kb-factor/SKILL.
 
 | Change | Example request | What it does to `risk-kb.json` |
 |---|---|---|
-| Add | "Bungalows over €400k add +12" | appends a new entry to `factors[]` |
+| Add | "flood zone postcode prefix EX or PL, +15" | appends a new entry to `factors[]` |
 | Change a weight | "the age factor should be +25" | edits only `points`; the `id` stays the same |
 | Disable | "pause the flat factor" | sets `"enabled": false` and keeps the entry |
 | Remove | "drop property_value_high" | deletes the entry |

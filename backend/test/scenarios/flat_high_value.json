@@ -28,5 +28,12 @@
     "request": { "propertyType": "Flat", "propertyValue": 800000 },
     "expect": { "riskScore": 70, "riskBand": "HIGH_RISK", "appliedFactorIds": ["property_type_flat", "property_value_high", "flat_high_value"], "annualPremium": 792 },
     "why": "Flat +10, 800000 > 750000 +25, Flat AND > 500000 +35 → 70 → HIGH_RISK (61+); 300 × 2.2 × 1.2 = 792"
+  },
+  {
+    "name": "a Flat at £600,000 with a UK postcode: £ wording on the compound factor",
+    "request": { "propertyType": "Flat", "propertyValue": 600000, "postcode": "m1 1ae" },
+    "expect": { "riskScore": 45, "riskBand": "ELEVATED", "appliedFactorIds": ["property_type_flat", "flat_high_value"], "annualPremium": 540, "currency": "GBP",
+      "descriptions": { "flat_high_value": "Flat valued over £500,000 — higher shared-building exposure", "property_type_flat": "Flat — higher shared risk" } },
+    "why": "Flat +10, Flat AND 600000 > 500000 +35 → 45 → ELEVATED; 300 × 1.5 × 1.2 = 540; m1 1ae upper-cases to M1 1AE, a UK postcode → GBP; property_type_flat has no descriptions map, so both markets see its one description"
   }
 ]

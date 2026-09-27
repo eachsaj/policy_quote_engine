@@ -121,7 +121,7 @@ Every phase follows the same loop, so the log shows intentional engineering:
   - customer name
   - age
   - property type (House / Flat / Bungalow)
-  - property value (€)
+  - property value (£ or €, following the postcode)
   - postcode
   - previous claims in the last 5 years
 
@@ -135,12 +135,12 @@ Every phase follows the same loop, so the log shows intentional engineering:
   - It displays the KB label, "STANDARD / ELEVATED / HIGH RISK", exactly as the brief shows it.
   - It styles itself through `data-band`, with a neutral fallback for unknown bands.
 - Results panel:
-  - Monthly and annual premium (€).
+  - Monthly and annual premium (£ or €, following the postcode).
   - The badge.
   - The plain-English risk summary.
   - The **active risk factors applied**: an `@for` over `appliedFactors`, showing the KB `description` and points for each.
   - The coverage breakdown and `kbVersion`.
-- `computed()` for sorted factors, total points and formatted € premiums. `effect()` only moves focus to the results and announces them through `aria-live`.
+- `computed()` for sorted factors, total points and formatted premiums in the quote's currency. `effect()` only moves focus to the results and announces them through `aria-live`.
 - Hand-written responsive CSS (no Material, PrimeNG or Bootstrap), with loading, error and empty states.
 - Tests: the badge for each band and for an unknown band, factor rows rendered from a mock response, and signal transitions (loading → result, and loading → error).
 
@@ -216,9 +216,9 @@ Each line of the brief maps to the phase that delivers it and the check that pro
 | Explain every line of agent output | 8 | Q&A prep, rehearsal |
 | **Angular frontend** | | |
 | Angular 17+, standalone only, no NgModules | 4 | Scaffold flags, grep for `NgModule` |
-| Reactive form with the 6 fields (name, age, House/Flat/Bungalow, value €, postcode, claims in last 5 yrs) | 4 | Form tests, visual check |
+| Reactive form with the 6 fields (name, age, House/Flat/Bungalow, value £/€, postcode, claims in last 5 yrs) | 4 | Form tests, visual check |
 | Signals for `loading`, `quoteResult`, `errorMessage` | 4 | Code review, grep for no Subjects |
-| Display monthly €, annual €, badge STANDARD/ELEVATED/HIGH RISK, summary, applied factors from KB | 5 | Band samples in the browser |
+| Display monthly and annual £/€, badge STANDARD/ELEVATED/HIGH RISK, summary, applied factors from KB | 5 | Band samples in the browser |
 | Reusable `RiskBandBadgeComponent` with `riskBand` input | 5 | Badge tests |
 | RxJS `HttpClient` → `POST /policy/quote` | 4 | `QuoteService` |
 | **Node.js backend** | | |

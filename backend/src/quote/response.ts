@@ -1,4 +1,5 @@
 import type { AppliedFactor } from '../engine/score';
+import type { Currency } from './market';
 
 export type { AppliedFactor };
 
@@ -10,10 +11,11 @@ export interface CoverageDetails {
   readonly items: ReadonlyArray<{ readonly id: string; readonly description: string }>;
 }
 
-/** The brief's response fields, plus `riskBandLabel` (badge wording from the KB) and `kbVersion` (bonus). */
+/** The brief's response fields, plus `currency` (from the postcode's market), `riskBandLabel` (badge wording from the KB) and `kbVersion` (bonus). */
 export interface QuoteResponse {
   readonly monthlyPremium: number;
   readonly annualPremium: number;
+  readonly currency: Currency; // GBP for a UK postcode, EUR for an Eircode; amounts are not converted
   readonly riskBand: string;
   readonly riskBandLabel: string;
   readonly riskScore: number;

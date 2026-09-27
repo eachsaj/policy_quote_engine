@@ -5,7 +5,9 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { propertyTypes, type QuoteRequest, type QuoteResponse } from '../models/quote';
+import { Title } from '@angular/platform-browser';
+import { currencyOf, propertyTypes, type QuoteRequest, type QuoteResponse } from '../models/quote';
+import { currencyNames, currencySymbols, formatMoney } from './money';
 import { buildQuoteForm, fieldLabels, toQuoteRequest } from './quote-form';
 import { QuoteResultComponent } from './quote-result.component';
 import { QuoteService } from './quote.service';
@@ -21,6 +23,7 @@ export class QuotePageComponent {
   private readonly quotes = inject(QuoteService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
+  private readonly title = inject(Title);
 
   protected readonly propertyTypes = propertyTypes;
   protected readonly labels = fieldLabels;
@@ -36,7 +39,15 @@ export class QuotePageComponent {
   protected readonly canSubmit = computed(() => this.formStatus() === 'VALID' && !this.loading());
   protected readonly announcement = computed(() => {
     const q = this.quoteResult();
-    return q ? `Quote ready: ${q.riskBandLabel}, ${q.monthlyPremium.toFixed(2)} euro a month.` : '';
+    return q ? `Quote ready: ${q.riskBandLabel}, ${q.monthlyPremium.toFixed(2)} ${currencyNames[q.currency]} a month.` : '';
+  });
+
+  // The property value's currency follows the postcode as it is typed: £ for a UK postcode, € for an Eircode.
+  private readonly postcode = toSignal(this.form.controls.postcode.valueChanges, { initialValue: this.form.controls.postcode.value });
+  protected readonly valueCurrency = computed(() => currencyOf(this.postcode()));
+  protected readonly valueSymbol = computed(() => {
+    const currency = this.valueCurrency();
+    return currency ? currencySymbols[currency] : '£/€';
   });
 
   private readonly resultHeading = viewChild<ElementRef<HTMLElement>>('resultHeading');
@@ -46,6 +57,12 @@ export class QuotePageComponent {
     effect(() => {
       if (!this.quoteResult()) return;
       afterNextRender(() => this.resultHeading()?.nativeElement.focus(), { injector: this.injector });
+    });
+
+    // Also a side effect only: the browser tab shows the current quote, and goes back to the app name after an error.
+    effect(() => {
+      const q = this.quoteResult();
+      this.title.setTitle(q ? `${formatMoney(q.monthlyPremium, q.currency)} a month, ${q.riskBandLabel} · PolicyQuote` : 'PolicyQuote');
     });
   }
 

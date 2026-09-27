@@ -15,6 +15,7 @@ description: Appends an honest, dated entry to AGENT_LOG.md in the PolicyQuote r
    ```
 2. Replace every `TODO` in the new entry with the Edit tool. Keep each field to one to three lines.
 3. Confirm `grep -n TODO AGENT_LOG.md` returns nothing.
+4. Regenerate the index at the top of the log: `node .claude/skills/agent-log/scripts/index.mjs`. It rewrites only the block between the index markers, never an entry.
 
 ## Field rules
 

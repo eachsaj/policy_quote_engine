@@ -10,5 +10,19 @@
     "request": { "propertyValue": 750001 },
     "expect": { "riskScore": 25, "riskBand": "STANDARD", "appliedFactorIds": ["property_value_high"], "annualPremium": 360 },
     "why": "750001 > 750000 → +25; 25 is the top of STANDARD (0–25); 300 × 1.0 × 1.2 = 360"
+  },
+  {
+    "name": "a UK postcode prices in £ with the brief's £ wording",
+    "request": { "propertyValue": 800000, "postcode": "SW1A 1AA" },
+    "expect": { "riskScore": 25, "riskBand": "STANDARD", "appliedFactorIds": ["property_value_high"], "annualPremium": 360, "currency": "GBP",
+      "descriptions": { "property_value_high": "Property value over £750,000" } },
+    "why": "800000 > 750000 → +25 → STANDARD; 300 × 1.0 × 1.2 = 360; SW1A 1AA is a UK postcode → GBP, and GBP uses the factor's description (the brief's wording)"
+  },
+  {
+    "name": "an Eircode prices the same amount in € with the EUR wording",
+    "request": { "propertyValue": 800000, "postcode": "D02 X285" },
+    "expect": { "riskScore": 25, "riskBand": "STANDARD", "appliedFactorIds": ["property_value_high"], "annualPremium": 360, "currency": "EUR",
+      "descriptions": { "property_value_high": "Property value over €750,000" } },
+    "why": "same score and premium as the UK case (no conversion); D02 X285 is an Eircode → EUR → descriptions.EUR"
   }
 ]

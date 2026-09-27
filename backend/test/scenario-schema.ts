@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { currencies } from '../src/quote/market';
 
 const expectation = z.strictObject({
   riskScore: z.number(),
@@ -6,6 +7,8 @@ const expectation = z.strictObject({
   appliedFactorIds: z.array(z.string()),
   annualPremium: z.number().optional(),
   monthlyPremium: z.number().optional(),
+  currency: z.enum(currencies).optional(),
+  descriptions: z.record(z.string(), z.string()).optional(), // factor id → wording the customer sees
 });
 export type Expectation = z.infer<typeof expectation>;
 

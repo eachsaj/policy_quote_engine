@@ -1,4 +1,4 @@
-// Generated from the backend contract (see AGENT_LOG): backend/src/quote/request.ts (Zod schema),
+// Generated from the backend contract (see AGENT_LOG): backend/src/quote/request.ts (Zod schema), quote/market.ts,
 // backend/src/quote/response.ts and backend/src/engine/score.ts (AppliedFactor), backend/src/handler.ts (error bodies).
 // Keep in step with those files; change both in the same turn.
 
@@ -6,13 +6,22 @@
 export const propertyTypes = ['House', 'Flat', 'Bungalow'] as const;
 export type PropertyType = (typeof propertyTypes)[number];
 
+/** Mirrors backend/src/quote/market.ts: the postcode's format picks the market, and the market the currency. */
+export type Currency = 'GBP' | 'EUR';
+export const markets: readonly { readonly pattern: RegExp; readonly currency: Currency }[] = [
+  { pattern: /^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$/i, currency: 'GBP' },               // UK postcode, e.g. SW1A 1AA
+  { pattern: /^[ACDEFHKNPRTVWXY]\d[\dW] ?[\dACDEFHKNPRTVWXY]{4}$/i, currency: 'EUR' }, // Irish Eircode, e.g. D02 X285
+];
+export const currencyOf = (postcode: string): Currency | undefined =>
+  markets.find((m) => m.pattern.test(postcode.trim()))?.currency;
+
 /** Mirrors `z.infer<typeof quoteRequestSchema>`: the brief's six form fields. */
 export interface QuoteRequest {
   readonly customerName: string;  // 1–100 chars after trim; never scored
   readonly age: number;           // integer 18–120
   readonly propertyType: PropertyType;
-  readonly propertyValue: number; // > 0, in €
-  readonly postcode: string;      // Irish Eircode; the backend upper-cases it
+  readonly propertyValue: number; // > 0, in the postcode's currency (£ or €, no conversion)
+  readonly postcode: string;      // UK postcode or Irish Eircode; the backend upper-cases it
   readonly previousClaims: number; // integer 0–20, in the last 5 years
 }
 
@@ -34,6 +43,7 @@ export interface CoverageDetails {
 export interface QuoteResponse {
   readonly monthlyPremium: number;
   readonly annualPremium: number;
+  readonly currency: Currency;    // GBP for a UK postcode, EUR for an Eircode
   readonly riskBand: string;      // KB band id; a string, not a union, so a new KB band needs no frontend change
   readonly riskBandLabel: string; // KB badge wording
   readonly riskScore: number;

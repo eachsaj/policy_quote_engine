@@ -20,7 +20,7 @@ describe('handler', () => {
     expect(res.statusCode).toBe(200);
     expect(res.headers['Access-Control-Allow-Origin']).toBe('*');
     expect(json(res.body)).toEqual({
-      monthlyPremium: expect.any(Number), annualPremium: expect.any(Number),
+      monthlyPremium: expect.any(Number), annualPremium: expect.any(Number), currency: expect.any(String),
       riskBand: expect.any(String), riskBandLabel: expect.any(String), riskScore: expect.any(Number),
       riskSummary: expect.any(String), coverageDetails: expect.any(Object),
       appliedFactors: expect.any(Array), kbVersion: expect.any(String),
